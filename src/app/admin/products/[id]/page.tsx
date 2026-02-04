@@ -3,13 +3,14 @@ import { ProductForm } from "../product-form"
 import { notFound } from "next/navigation"
 
 interface Props {
-    params: {
+    params: Promise<{
         id: string
-    }
+    }>
 }
 
 export default async function ProductEditPage({ params }: Props) {
-    const { success, data: product } = await getProductById(params.id)
+    const { id } = await params
+    const { success, data: product } = await getProductById(id)
 
     if (!success || !product) {
         notFound()

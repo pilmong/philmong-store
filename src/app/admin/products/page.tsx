@@ -11,6 +11,7 @@ import { getProducts } from "./actions"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { DeleteProductButton } from "./delete-product-button"
 
 // Enum Translations
 const TYPE_LABEL: Record<string, string> = {
@@ -88,9 +89,12 @@ export default async function ProductsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Link href={`/admin/products/${product.id}`}>
-                                            <Button variant="outline" size="sm">수정</Button>
-                                        </Link>
+                                        <div className="flex items-center gap-2">
+                                            <Link href={`/admin/products/${product.id}`}>
+                                                <Button variant="outline" size="sm">수정</Button>
+                                            </Link>
+                                            <DeleteProductButton id={product.id} name={product.name} />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
