@@ -208,7 +208,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         <FormItem>
                             <FormLabel>상품명</FormLabel>
                             <FormControl>
-                                <Input placeholder="예: 어향가지덮밥" {...field} />
+                                <Input autoFocus placeholder="예: 어향가지덮밥" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
