@@ -11,6 +11,7 @@ import { getProducts } from "./actions"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { ProductListShortcuts } from "./product-list-shortcuts"
 
 // Enum Translations
 const TYPE_LABEL: Record<string, string> = {
@@ -39,6 +40,7 @@ export default async function ProductsPage() {
 
     return (
         <div className="container mx-auto py-10">
+            <ProductListShortcuts />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">상품 관리 (Product Manager)</h1>
                 <Link href="/admin/products/new">

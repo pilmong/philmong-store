@@ -115,6 +115,19 @@ export function ProductForm({ initialData }: ProductFormProps) {
         }
     }, [initialData, form])
 
+    // Keyboard Shortcut: Ctrl + S to Save
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault()
+                form.handleSubmit(onSubmit)()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [form, onSubmit])
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true)
         try {
