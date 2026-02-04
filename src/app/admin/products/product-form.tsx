@@ -104,11 +104,12 @@ export function ProductForm({ initialData }: ProductFormProps) {
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved)
+                    // Use setValue to preserve other default values and ensure UI update
                     if (parsed.type) form.setValue("type", parsed.type)
                     if (parsed.category) form.setValue("category", parsed.category)
                     if (parsed.workDivision) form.setValue("workDivision", parsed.workDivision)
                 } catch (e) {
-                    console.error("Failed to parse saved product fields", e)
+                    console.error("Failed to load saved product fields", e)
                 }
             }
         }
@@ -246,7 +247,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>상품 유형</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="유형 선택" />
@@ -269,7 +270,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>카테고리</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="카테고리 선택" />
@@ -294,7 +295,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>작업 구분</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="작업 구분 선택" />
@@ -316,7 +317,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>판매 상태</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder="상태 선택" />
