@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SaladViewer } from "../components/salad-viewer"
 import { LunchBoxGuide } from "../components/lunchbox-guide"
+import { Invoice } from "../components/invoice"
 import { getDailyOperations } from "./actions"
 import { ChevronLeft, ChevronRight, RefreshCw, Printer } from "lucide-react"
 
