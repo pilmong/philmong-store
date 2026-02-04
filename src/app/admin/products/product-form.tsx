@@ -100,23 +100,22 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
     // Initialization: Handle mount and load from localStorage
     useEffect(() => {
-        setMounted(true)
         if (!initialData) {
             const saved = localStorage.getItem(STORAGE_KEY)
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved)
-                    // Reset with merging defaults and saved values to ensure full UI sync
-                    form.reset({
-                        ...defaultValues,
-                        ...parsed
-                    })
+                    // Use setValue with full options to ensure React Hook Form and UI pick it up
+                    if (parsed.type) form.setValue("type", parsed.type, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
+                    if (parsed.category) form.setValue("category", parsed.category, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
+                    if (parsed.workDivision) form.setValue("workDivision", parsed.workDivision, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
                 } catch (e) {
                     console.error("Failed to load saved product fields", e)
                 }
             }
         }
-    }, [initialData])
+        setMounted(true)
+    }, [initialData, form])
 
     // Keyboard Shortcut: Ctrl + S to Save
     useEffect(() => {
@@ -143,6 +142,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     standardQuantity: values.standardQuantity || undefined
                 })
                 if (result.success) {
+                    // Save fields to localStorage even on update for better persistence
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        type: values.type,
+                        category: values.category,
+                        workDivision: values.workDivision
+                    }))
+
                     alert("상품이 수정되었습니다.")
                     router.push("/admin/products")
                     router.refresh()
