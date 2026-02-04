@@ -76,9 +76,7 @@ export function AdminHeader() {
                                         <ListItem href="/admin/orders" title="주문 관리 (Orders)">
                                             전체 통합 주문 내역 조회
                                         </ListItem>
-                                        <ListItem href="/admin/purchases" title="구매 관리 (Purchases)">
-                                            자재 발주 및 입고 관리 (별도 앱)
-                                        </ListItem>
+
                                         <ListItem href="/admin/delivery-zones" title="배달 구역 (Zones)">
                                             배송 가능 지역 설정
                                         </ListItem>

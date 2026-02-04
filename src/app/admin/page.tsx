@@ -17,13 +17,7 @@ const dashboardItems = [
         href: "/admin/orders",
         color: "text-green-500",
     },
-    {
-        title: "구매 관리",
-        description: "자재 발주 및 입고 관리 (별도 앱)",
-        icon: Truck,
-        href: "/admin/purchases",
-        color: "text-red-500",
-    },
+
     {
         title: "식단 편성",
         description: "월간 식단표 구성 및 캘린더",
@@ -65,32 +59,27 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {dashboardItems.map((item) => {
-                    const isExternalApp = item.href === "/admin/purchases"
-                    const Wrapper = isExternalApp ? "a" : Link
-
-                    return (
-                        <Wrapper
-                            key={item.href}
-                            href={item.href}
-                            className="block h-full"
-                        >
-                            <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-lg font-medium">
-                                        {item.title}
-                                    </CardTitle>
-                                    <item.icon className={`h-6 w-6 ${item.color}`} />
-                                </CardHeader>
-                                <CardContent>
-                                    <CardDescription className="text-base mt-2">
-                                        {item.description}
-                                    </CardDescription>
-                                </CardContent>
-                            </Card>
-                        </Wrapper>
-                    )
-                })}
+                {dashboardItems.map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className="block h-full"
+                    >
+                        <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-lg font-medium">
+                                    {item.title}
+                                </CardTitle>
+                                <item.icon className={`h-6 w-6 ${item.color}`} />
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription className="text-base mt-2">
+                                    {item.description}
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                ))}
             </div>
         </div>
     )
