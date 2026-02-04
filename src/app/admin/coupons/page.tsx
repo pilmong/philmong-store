@@ -26,7 +26,7 @@ export default function CouponAdminPage() {
         setLoading(true)
         const result = await getCoupons()
         if (result.success) {
-            setCoupons(result.data)
+            setCoupons(result.data || [])
         } else {
             toast.error(result.error)
         }
