@@ -77,6 +77,7 @@ interface ProductFormProps {
 export function ProductForm({ initialData }: ProductFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
+    const [mounted, setMounted] = useState(false)
 
     // Fallback values for nullable fields from DB
     const defaultValues: z.infer<typeof formSchema> = {
@@ -97,23 +98,27 @@ export function ProductForm({ initialData }: ProductFormProps) {
         defaultValues,
     })
 
-    // Load from localStorage for new products
+    // Initialization: Handle mount and load from localStorage
     useEffect(() => {
+        setMounted(true)
         if (!initialData) {
             const saved = localStorage.getItem(STORAGE_KEY)
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved)
-                    // Use setValue to preserve other default values and ensure UI update
-                    if (parsed.type) form.setValue("type", parsed.type)
-                    if (parsed.category) form.setValue("category", parsed.category)
-                    if (parsed.workDivision) form.setValue("workDivision", parsed.workDivision)
+                    // Reset with merging defaults and saved values to ensure full UI sync
+                    form.reset({
+                        ...defaultValues,
+                        ...parsed
+                    })
                 } catch (e) {
                     console.error("Failed to load saved product fields", e)
                 }
             }
         }
-    }, [initialData, form])
+    }, [initialData])
+
+    if (!mounted) return null
 
     // Keyboard Shortcut: Ctrl + S to Save
     useEffect(() => {
