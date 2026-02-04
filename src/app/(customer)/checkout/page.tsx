@@ -85,7 +85,7 @@ export default function CheckoutPage() {
         if (params.get("note")) setRequestNote(params.get("note") || "")
 
         // Load User Session
-        getUserSession().then(userData => {
+        getUserSession().then((userData: any) => {
             if (userData) {
                 setUser(userData)
                 setName(userData.name)
