@@ -480,20 +480,26 @@ export function MenuCalendar() {
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">판매 가격</Label>
                             <Input
-                                type="number"
+                                type="text"
                                 className="col-span-3"
-                                value={price}
-                                onChange={e => setPrice(Number(e.target.value))}
+                                value={price.toString()}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '')
+                                    setPrice(val === '' ? 0 : Number(val))
+                                }}
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right">한정 수량</Label>
                             <Input
-                                type="number"
+                                type="text"
                                 className="col-span-3"
                                 placeholder="무제한 (비워두면)"
-                                value={quantityLimit || ''}
-                                onChange={e => setQuantityLimit(e.target.value ? Number(e.target.value) : undefined)}
+                                value={(quantityLimit ?? "").toString()}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '')
+                                    setQuantityLimit(val === '' ? undefined : Number(val))
+                                }}
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">

@@ -117,10 +117,13 @@ export function DeliveryZoneDialog({ zone }: DeliveryZoneDialogProps) {
                     <div className="grid gap-2">
                         <Label>배달 가격 (원)</Label>
                         <Input
-                            type="number"
-                            step="100"
-                            value={price}
-                            onChange={e => setPrice(Number(e.target.value))}
+                            type="text"
+                            value={price.toString()}
+                            onChange={e => {
+                                const val = e.target.value.replace(/[^0-9]/g, '')
+                                setPrice(val === '' ? 0 : Number(val))
+                            }}
+                            placeholder="0"
                         />
                     </div>
 

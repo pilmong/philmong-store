@@ -189,21 +189,19 @@ export default function B2BDashboardPage() {
                                                     <div className="flex-1 bg-slate-50 p-2 rounded border">
                                                         <label className="text-[10px] text-slate-500 font-bold block mb-1">도시락</label>
                                                         <Input
-                                                            type="number"
+                                                            type="text"
                                                             className="bg-white text-lg font-bold text-center h-9 p-0"
                                                             value={dayValues.lunch}
                                                             onChange={(e) => handleInputChange(dateStr, 'lunch', e.target.value)}
-                                                            onFocus={(e) => e.target.select()}
                                                         />
                                                     </div>
                                                     <div className="flex-1 bg-slate-50 p-2 rounded border">
                                                         <label className="text-[10px] text-slate-500 font-bold block mb-1">샐러드</label>
                                                         <Input
-                                                            type="number"
+                                                            type="text"
                                                             className="bg-white text-lg font-bold text-center h-9 p-0"
                                                             value={dayValues.salad}
                                                             onChange={(e) => handleInputChange(dateStr, 'salad', e.target.value)}
-                                                            onFocus={(e) => e.target.select()}
                                                         />
                                                     </div>
                                                 </div>

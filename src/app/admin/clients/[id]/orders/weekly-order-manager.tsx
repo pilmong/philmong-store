@@ -135,19 +135,25 @@ function DailyOrderCard({ date, order, onSave, isToday, disabled }: any) {
                 <div className="space-y-1">
                     <Label className="text-xs">도시락</Label>
                     <Input
-                        type="number"
-                        min="0"
-                        value={lunchQty}
-                        onChange={e => handleChange(setLunchQty, Number(e.target.value))}
+                        type="text"
+                        value={lunchQty.toString()}
+                        onChange={e => {
+                            const val = e.target.value.replace(/[^0-9]/g, '')
+                            handleChange(setLunchQty, val === '' ? 0 : Number(val))
+                        }}
+                        placeholder="0"
                     />
                 </div>
                 <div className="space-y-1">
                     <Label className="text-xs">샐러드</Label>
                     <Input
-                        type="number"
-                        min="0"
-                        value={saladQty}
-                        onChange={e => handleChange(setSaladQty, Number(e.target.value))}
+                        type="text"
+                        value={saladQty.toString()}
+                        onChange={e => {
+                            const val = e.target.value.replace(/[^0-9]/g, '')
+                            handleChange(setSaladQty, val === '' ? 0 : Number(val))
+                        }}
+                        placeholder="0"
                     />
                 </div>
                 <div className="space-y-1">

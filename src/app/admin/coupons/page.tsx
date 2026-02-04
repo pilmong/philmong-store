@@ -150,17 +150,19 @@ export default function CouponAdminPage() {
                                 <div>
                                     <Label>할인 금액</Label>
                                     <Input
-                                        type="number"
+                                        type="text"
                                         value={formData.discountAmount}
-                                        onChange={e => setFormData({ ...formData, discountAmount: e.target.value })}
+                                        onChange={e => setFormData({ ...formData, discountAmount: e.target.value.replace(/[^0-9]/g, '') })}
+                                        placeholder="0"
                                     />
                                 </div>
                                 <div>
                                     <Label>최소 주문금액</Label>
                                     <Input
-                                        type="number"
+                                        type="text"
                                         value={formData.minOrderAmount}
-                                        onChange={e => setFormData({ ...formData, minOrderAmount: e.target.value })}
+                                        onChange={e => setFormData({ ...formData, minOrderAmount: e.target.value.replace(/[^0-9]/g, '') })}
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>

@@ -174,14 +174,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                 <FormControl>
                                     <Input
                                         type="text"
-                                        inputMode="numeric"
                                         placeholder="0"
                                         {...field}
                                         onChange={(e) => {
                                             const val = e.target.value.replace(/[^0-9]/g, '')
-                                            field.onChange(Number(val))
+                                            field.onChange(val === '' ? 0 : Number(val))
                                         }}
-                                        value={field.value}
+                                        value={field.value.toString()}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -198,14 +197,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                 <FormControl>
                                     <Input
                                         type="text"
-                                        inputMode="numeric"
                                         placeholder="0"
                                         {...field}
                                         onChange={(e) => {
                                             const val = e.target.value.replace(/[^0-9]/g, '')
-                                            field.onChange(Number(val))
+                                            field.onChange(val === '' ? undefined : Number(val))
                                         }}
-                                        value={field.value || ""}
+                                        value={(field.value ?? "").toString()}
                                     />
                                 </FormControl>
                                 <FormDescription>진열 상품의 경우 기준 수량 입력</FormDescription>
