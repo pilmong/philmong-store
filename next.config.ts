@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
-const PURCHASE_APP_URL = process.env.PURCHASE_APP_URL || "https://philmong-purchase.vercel.app"
+const PURCHASE_APP_URL = process.env.PURCHASE_APP_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? "https://philmong-purchase.vercel.app"
+    : "http://127.0.0.1:3001")
 
 const nextConfig: NextConfig = {
   rewrites: async () => {
