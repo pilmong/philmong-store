@@ -8,8 +8,8 @@ export function ProductListShortcuts() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Ctrl + N for New Product
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
+            // Ctrl + Q for New Product
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'q') {
                 e.preventDefault()
                 router.push("/admin/products/new")
             }
