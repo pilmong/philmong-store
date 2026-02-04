@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/select"
 import { createProduct, updateProduct, deleteProduct } from "./actions"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProductType, ProductCategory, WorkDivision, ProductStatus, Product } from "@prisma/client"
+
+const STORAGE_KEY = "philmong_last_product_fields"
 
 // Zod Schema
 const formSchema = z.object({
@@ -95,6 +97,23 @@ export function ProductForm({ initialData }: ProductFormProps) {
         defaultValues,
     })
 
+    // Load from localStorage for new products
+    useEffect(() => {
+        if (!initialData) {
+            const saved = localStorage.getItem(STORAGE_KEY)
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved)
+                    if (parsed.type) form.setValue("type", parsed.type)
+                    if (parsed.category) form.setValue("category", parsed.category)
+                    if (parsed.workDivision) form.setValue("workDivision", parsed.workDivision)
+                } catch (e) {
+                    console.error("Failed to parse saved product fields", e)
+                }
+            }
+        }
+    }, [initialData, form])
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true)
         try {
@@ -118,6 +137,13 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     standardQuantity: values.standardQuantity || undefined
                 })
                 if (result.success) {
+                    // Save fields to localStorage for next time
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        type: values.type,
+                        category: values.category,
+                        workDivision: values.workDivision
+                    }))
+
                     alert("상품이 등록되었습니다.")
                     router.push("/admin/products")
                     router.refresh()
