@@ -118,8 +118,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
         }
     }, [initialData])
 
-    if (!mounted) return null
-
     // Keyboard Shortcut: Ctrl + S to Save
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -132,6 +130,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [form, onSubmit])
+
+    if (!mounted) return null
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true)
