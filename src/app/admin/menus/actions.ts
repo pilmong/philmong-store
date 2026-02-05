@@ -81,11 +81,12 @@ export async function upsertMenuPlan(data: MenuPlanInput) {
             })
         } else {
             // Check if plan already exists for this product on this day to avoid duplicates
+            const { start, end } = getKSTRange(data.planDate)
             const existing = await prisma.menuPlan.findFirst({
                 where: {
                     planDate: {
-                        gte: startOfDay(data.planDate),
-                        lte: endOfDay(data.planDate)
+                        gte: start,
+                        lte: end
                     },
                     productId: data.productId
                 }
@@ -190,11 +191,12 @@ export async function updateProduct(id: string, data: Partial<Product>) {
 export async function copyMenuPlans(sourceDate: Date, targetDate: Date) {
     try {
         // 1. Get source plans
+        const { start: sStart, end: sEnd } = getKSTRange(sourceDate)
         const sourcePlans = await prisma.menuPlan.findMany({
             where: {
                 planDate: {
-                    gte: startOfDay(sourceDate),
-                    lte: endOfDay(sourceDate)
+                    gte: sStart,
+                    lte: sEnd
                 }
             }
         })
@@ -204,11 +206,12 @@ export async function copyMenuPlans(sourceDate: Date, targetDate: Date) {
         }
 
         // 2. Clear target plans (Optional, but safer for a clean copy)
+        const { start: tStart, end: tEnd } = getKSTRange(targetDate)
         await prisma.menuPlan.deleteMany({
             where: {
                 planDate: {
-                    gte: startOfDay(targetDate),
-                    lte: endOfDay(targetDate)
+                    gte: tStart,
+                    lte: tEnd
                 }
             }
         })
