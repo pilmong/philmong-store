@@ -54,6 +54,7 @@ export function MenuCalendar() {
     // Quick Search State
     const [searchOpen, setSearchOpen] = useState(false)
     const [activeSlotFilter, setActiveSlotFilter] = useState<string[]>([])
+    const [activeTypeFilter, setActiveTypeFilter] = useState<string[]>([])
 
     // Form State
     const [selectedProductId, setSelectedProductId] = useState("")
@@ -155,6 +156,16 @@ export function MenuCalendar() {
             else if (label === '스페셜') filterVals = ['SPECIAL']
 
             setActiveSlotFilter(filterVals)
+
+            // Type Filter
+            if (['데일리', '스페셜'].includes(label)) {
+                setActiveTypeFilter([label === '데일리' ? 'DAILY' : 'SPECIAL'])
+            } else if (label === '샐러드 메인') {
+                setActiveTypeFilter(['SALAD'])
+            } else {
+                setActiveTypeFilter(['LUNCH_BOX', 'REGULAR'])
+            }
+
             setSearchOpen(true)
         } else {
             // Text Edit (Salad Ingredients)
@@ -209,38 +220,11 @@ export function MenuCalendar() {
     const handleCreateNew = async (name: string) => {
         if (!name.trim() || !date) return
 
-        let type = 'LUNCH_BOX' // Default to LUNCH_BOX for all Lunch Guide slots
-        let category = 'MAIN_DISH'
-        const label = editingSlot.label
+        let type = activeTypeFilter.length > 0 ? activeTypeFilter[0] : 'LUNCH_BOX'
+        let category = activeSlotFilter.length > 0 ? activeSlotFilter[0] : 'MAIN_DISH'
 
-        if (label === '밥') {
-            type = 'LUNCH_BOX'
-            category = 'MAIN_DISH'
-        }
-        else if (label === '국') {
-            type = 'LUNCH_BOX'
-            category = 'SOUP'
-        }
-        else if (label === '메인') {
-            type = 'LUNCH_BOX'
-            category = 'MAIN_DISH'
-        }
-        else if (label.startsWith('반찬')) {
-            type = 'LUNCH_BOX'
-            category = 'SIDE_DISH'
-        }
-        else if (label === '샐러드 메인') {
-            type = 'SALAD'
-            category = 'MAIN_DISH'
-        }
-        else if (label === '데일리') {
-            type = 'DAILY'
-            category = 'MAIN_DISH'
-        }
-        else if (label === '스페셜') {
-            type = 'SPECIAL'
-            category = 'MAIN_DISH'
-        }
+        // Final fallback if something is weird
+        if (type === 'REGULAR') type = 'LUNCH_BOX'
 
         await createProductAndPlan(name, type, category, date, 0)
         await fetchPlans(date)
@@ -428,7 +412,11 @@ export function MenuCalendar() {
                     </CommandEmpty>
                     <CommandGroup heading="추천 메뉴">
                         {products
-                            .filter(p => activeSlotFilter.length === 0 || activeSlotFilter.includes(p.category || '') || activeSlotFilter.includes(p.type || ''))
+                            .filter(p => {
+                                const catMatch = activeSlotFilter.length === 0 || activeSlotFilter.includes(p.category || '')
+                                const typeMatch = activeTypeFilter.length === 0 || activeTypeFilter.includes(p.type || '')
+                                return catMatch && typeMatch
+                            })
                             .map(product => (
                                 <CommandItem
                                     key={product.id}
