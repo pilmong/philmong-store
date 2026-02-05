@@ -9,7 +9,7 @@ import { useState, useEffect } from "react"
 import { getMenuPlans, getAvailableProducts, upsertMenuPlan, deleteMenuPlan, createProductAndPlan, updateMenuPlanDescription, type MenuPlanInput } from "./actions"
 import { Product, MenuPlan } from "@prisma/client"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Loader2 } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -68,6 +68,7 @@ export function MenuCalendar() {
     const [editingSlot, setEditingSlot] = useState<{ label: string, id?: string, type: 'PRODUCT' | 'TEXT' }>({ label: '', type: 'PRODUCT' })
     const [textEditOpen, setTextEditOpen] = useState(false)
     const [textInputValue, setTextInputValue] = useState("")
+    const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
         loadProducts()
@@ -105,8 +106,10 @@ export function MenuCalendar() {
             descriptionOverride: description
         }
 
+        setIsSaving(true)
         await upsertMenuPlan(input)
         await fetchPlans(date)
+        setIsSaving(false)
         setIsAdding(false)
 
         // Reset form
@@ -174,6 +177,7 @@ export function MenuCalendar() {
             return
         }
 
+        setIsSaving(true)
         let targetId = editingSlot.id
 
         // Special logic for Salad Ingredients: if no salad is planned yet, create one first
@@ -199,6 +203,7 @@ export function MenuCalendar() {
         } else {
             alert("저장에 실패했습니다.")
         }
+        setIsSaving(false)
     }
 
     const handleCreateNew = async (name: string) => {
@@ -468,7 +473,16 @@ export function MenuCalendar() {
                             onKeyDown={e => e.key === 'Enter' && handleTextSave()}
                         />
                     </div>
-                    <Button onClick={handleTextSave}>저장</Button>
+                    <Button onClick={handleTextSave} disabled={isSaving}>
+                        {isSaving ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                저장 중...
+                            </>
+                        ) : (
+                            "저장"
+                        )}
+                    </Button>
                 </DialogContent>
             </Dialog>
 
@@ -533,7 +547,16 @@ export function MenuCalendar() {
                             />
                         </div>
                     </div>
-                    <Button onClick={handleAddPlan}>저장하기</Button>
+                    <Button onClick={handleAddPlan} disabled={isSaving}>
+                        {isSaving ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                저장 중...
+                            </>
+                        ) : (
+                            "저장하기"
+                        )}
+                    </Button>
                 </DialogContent>
             </Dialog>
         </div>
