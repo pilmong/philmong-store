@@ -102,7 +102,7 @@ export async function bulkCreateProducts(
         workDivision: WorkDivision
         status: ProductStatus
     },
-    items: { name: string; basePrice: number }[]
+    items: { name: string; basePrice: number; description?: string }[]
 ) {
     try {
         // Filter out empty names
@@ -114,7 +114,8 @@ export async function bulkCreateProducts(
                 data: {
                     ...commonData,
                     name: item.name,
-                    basePrice: item.basePrice
+                    basePrice: item.basePrice,
+                    description: item.description
                 }
             }))
         )

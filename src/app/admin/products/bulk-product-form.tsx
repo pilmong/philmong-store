@@ -64,15 +64,15 @@ export function BulkProductForm() {
     const [commonStatus, setCommonStatus] = useState<ProductStatus>(ProductStatus.SELLING)
 
     // Items List
-    const [items, setItems] = useState([{ name: "", basePrice: 0 }])
+    const [items, setItems] = useState([{ name: "", basePrice: 0, description: "" }])
 
-    const addItem = () => setItems([...items, { name: "", basePrice: 0 }])
+    const addItem = () => setItems([...items, { name: "", basePrice: 0, description: "" }])
     const removeItem = (index: number) => {
         if (items.length === 1) return
         setItems(items.filter((_, i) => i !== index))
     }
 
-    const updateItem = (index: number, field: 'name' | 'basePrice', value: any) => {
+    const updateItem = (index: number, field: 'name' | 'basePrice' | 'description', value: any) => {
         const newItems = [...items]
         newItems[index] = { ...newItems[index], [field]: value }
         setItems(newItems)
@@ -199,7 +199,8 @@ export function BulkProductForm() {
                                 <tr>
                                     <th className="px-6 py-3 text-left w-12">No</th>
                                     <th className="px-6 py-3 text-left">상품명</th>
-                                    <th className="px-6 py-3 text-left w-48">기본 가격 (원)</th>
+                                    <th className="px-6 py-3 text-left w-32">가격 (원)</th>
+                                    <th className="px-6 py-3 text-left">설명 (레시피 팁)</th>
                                     <th className="px-6 py-3 text-center w-20">삭제</th>
                                 </tr>
                             </thead>
@@ -221,14 +222,22 @@ export function BulkProductForm() {
                                                     type="text"
                                                     placeholder="0"
                                                     value={item.basePrice === 0 ? "" : item.basePrice}
-                                                    className="border-transparent focus:border-slate-200 bg-transparent hover:bg-white pr-8"
+                                                    className="border-transparent focus:border-slate-200 bg-transparent hover:bg-white pr-7 text-right"
                                                     onChange={(e) => {
                                                         const val = e.target.value.replace(/[^0-9]/g, '')
                                                         updateItem(index, 'basePrice', val === '' ? 0 : Number(val))
                                                     }}
                                                 />
-                                                <span className="absolute right-3 top-2.5 text-slate-400 text-xs">원</span>
+                                                <span className="absolute right-2 top-2.5 text-slate-400 text-[10px]">원</span>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Input
+                                                placeholder="레시피 팁 또는 간단 설명"
+                                                value={item.description}
+                                                className="border-transparent focus:border-slate-200 bg-transparent hover:bg-white"
+                                                onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                            />
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <Button
