@@ -3,13 +3,12 @@
 import { prisma } from "@/lib/prisma"
 import { OrderStatus, PaymentStatus } from "@prisma/client"
 import { revalidatePath } from "next/cache"
-import { startOfDay, endOfDay, subHours } from "date-fns"
+import { getKSTRange } from "@/lib/utils"
 
 export async function getOrders(dateStr?: string) {
     try {
         const date = dateStr ? new Date(dateStr) : new Date()
-        const start = startOfDay(date)
-        const end = endOfDay(date)
+        const { start, end } = getKSTRange(date)
 
         // Lazy Auto Cancel Check: Only for ACTIVE, UNPAID orders passed deadline
         // Better to do this in specific cron or robust trigger, but for MVP, check on read.

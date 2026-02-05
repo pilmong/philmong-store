@@ -4,9 +4,11 @@ import { MenuList } from "./components/menu-list"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 
+export const dynamic = "force-dynamic"
+
 export default async function CustomerMainPage() {
     const { success, data: plans } = await getTodayMenu()
-    const today = new Date()
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }))
 
     return (
         <div className="min-h-screen bg-slate-50 pb-20">

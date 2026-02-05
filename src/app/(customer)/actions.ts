@@ -1,18 +1,19 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
-import { startOfDay, endOfDay } from "date-fns"
+import { getKSTRange, getKSTDate } from "@/lib/utils"
 
 export async function getTodayMenu() {
     try {
-        const today = new Date()
+        const today = getKSTDate()
+        const { start, end } = getKSTRange(today)
 
         // 1. Fetch planned items for today
         const menuPlans = await prisma.menuPlan.findMany({
             where: {
                 planDate: {
-                    gte: startOfDay(today),
-                    lte: endOfDay(today)
+                    gte: start,
+                    lte: end
                 }
             },
             include: {

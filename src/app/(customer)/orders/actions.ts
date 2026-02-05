@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma"
 import { OrderStatus, PaymentStatus, DeliveryType } from "@prisma/client"
-import { format, startOfDay, endOfDay } from "date-fns"
+import { format } from "date-fns"
+import { getKSTRange, getKSTDate } from "@/lib/utils"
 
 interface OrderInput {
     userId?: string
@@ -63,10 +64,9 @@ export async function validateCoupon(code: string, orderAmount: number) {
 
 export async function createOrder(data: OrderInput) {
     try {
-        const today = new Date()
+        const today = getKSTDate()
+        const { start, end } = getKSTRange(today)
         const orderDateStr = format(today, "yyyyMMdd")
-        const start = startOfDay(today)
-        const end = endOfDay(today)
 
         // 1. Generate Order Number
         const count = await prisma.order.count({

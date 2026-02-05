@@ -2,15 +2,16 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { startOfDay, endOfDay } from "date-fns"
+import { getKSTRange } from "@/lib/utils"
 
 export async function getMenuPlans(date: Date) {
     try {
+        const { start, end } = getKSTRange(date)
         const plans = await prisma.menuPlan.findMany({
             where: {
                 planDate: {
-                    gte: startOfDay(date),
-                    lte: endOfDay(date)
+                    gte: start,
+                    lte: end
                 }
             },
             include: {

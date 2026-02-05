@@ -1,12 +1,11 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
-import { startOfDay, endOfDay } from "date-fns"
+import { getKSTRange } from "@/lib/utils"
 
 export async function getDailyOperations(date: Date) {
     try {
-        const start = startOfDay(date)
-        const end = endOfDay(date)
+        const { start, end } = getKSTRange(date)
 
         // Fetch all active clients
         // We might want to filter by those who have orders or are active?

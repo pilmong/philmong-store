@@ -284,7 +284,7 @@ export function MenuCalendar() {
         setNewProductName(p.name)
         setNewProductPrice(p.basePrice)
         setNewProductType(p.type)
-        setNewProductCategory(p.category)
+        setNewProductCategory(p.category || "LUNCH_MAIN" as ProductCategory)
         setNewProductDescription(p.description || "")
         setEditProductDialogOpen(true)
     }
