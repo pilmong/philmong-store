@@ -169,14 +169,32 @@ export function MenuCalendar() {
     }
 
     const handleTextSave = async () => {
-        if (!editingSlot.id || !textInputValue.trim()) {
+        if (!textInputValue.trim() || !date) {
             setTextEditOpen(false)
             return
         }
 
-        const res = await updateMenuPlanDescription(editingSlot.id, textInputValue)
+        let targetId = editingSlot.id
+
+        // Special logic for Salad Ingredients: if no salad is planned yet, create one first
+        if (editingSlot.label === '재료' && !targetId) {
+            const res = await createProductAndPlan("오늘의 샐러드", "SALAD", "MAIN_DISH", date, 7000)
+            if (res.success && res.data) {
+                targetId = res.data.id
+            } else {
+                alert("샐러드 메뉴 생성에 실패했습니다.")
+                return
+            }
+        }
+
+        if (!targetId) {
+            setTextEditOpen(false)
+            return
+        }
+
+        const res = await updateMenuPlanDescription(targetId, textInputValue)
         if (res.success) {
-            if (date) await fetchPlans(date)
+            await fetchPlans(date)
             setTextEditOpen(false)
         } else {
             alert("저장에 실패했습니다.")
