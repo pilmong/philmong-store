@@ -25,11 +25,18 @@ export default async function ProductsPage() {
             <ProductListShortcuts />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">상품 관리 (Product Manager)</h1>
-                <Link href="/admin/products/new">
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" /> 상품 등록
-                    </Button>
-                </Link>
+                <div className="flex gap-2">
+                    <Link href="/admin/products/bulk">
+                        <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50">
+                            <Plus className="mr-2 h-4 w-4" /> 대량 등록
+                        </Button>
+                    </Link>
+                    <Link href="/admin/products/new">
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" /> 개별 등록
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <ProductList initialProducts={products} />

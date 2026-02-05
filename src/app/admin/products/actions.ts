@@ -94,3 +94,35 @@ export async function deleteProduct(id: string) {
         return { success: false, error: "상품이 식단 편성 등에 사용 중이라 삭제할 수 없습니다. 먼저 관련 식단을 삭제해 주세요." }
     }
 }
+
+export async function bulkCreateProducts(
+    commonData: {
+        type: ProductType
+        category: ProductCategory
+        workDivision: WorkDivision
+        status: ProductStatus
+    },
+    items: { name: string; basePrice: number }[]
+) {
+    try {
+        // Filter out empty names
+        const validItems = items.filter(item => item.name.trim() !== "")
+        if (validItems.length === 0) return { success: false, error: "등록할 상품이 없습니다." }
+
+        const created = await prisma.$transaction(
+            validItems.map(item => prisma.product.create({
+                data: {
+                    ...commonData,
+                    name: item.name,
+                    basePrice: item.basePrice
+                }
+            }))
+        )
+
+        revalidatePath('/admin/products')
+        return { success: true, count: created.length }
+    } catch (error) {
+        console.error("Bulk create error:", error)
+        return { success: false, error: "상품 일괄 등록에 실패했습니다." }
+    }
+}
