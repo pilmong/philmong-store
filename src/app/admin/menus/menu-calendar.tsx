@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { useState, useEffect } from "react"
-import { getMenuPlans, getAvailableProducts, upsertMenuPlan, deleteMenuPlan, createProductAndPlan, type MenuPlanInput } from "./actions"
+import { getMenuPlans, getAvailableProducts, upsertMenuPlan, deleteMenuPlan, createProductAndPlan, updateMenuPlanDescription, type MenuPlanInput } from "./actions"
 import { Product, MenuPlan } from "@prisma/client"
 import { Button } from "@/components/ui/button"
 import { Plus, Trash2 } from "lucide-react"
@@ -169,14 +169,17 @@ export function MenuCalendar() {
     }
 
     const handleTextSave = async () => {
-        // ... (existing logic) ...
-        // For Salad Ingredients, we attach text to the Salad Main Plan.
-        if (editingSlot.label === '재료') {
-            // ...
-            // (Truncated for brevity in prompt, but I will keep existing logic if I don't touch it.
-            // Actually, the user prompt is about NEW function, not replacing this one.
-            // I am adding handleCreateNew below handleTextSave or unified?)
-            // I'll add handleCreateNew separate.
+        if (!editingSlot.id || !textInputValue.trim()) {
+            setTextEditOpen(false)
+            return
+        }
+
+        const res = await updateMenuPlanDescription(editingSlot.id, textInputValue)
+        if (res.success) {
+            if (date) await fetchPlans(date)
+            setTextEditOpen(false)
+        } else {
+            alert("저장에 실패했습니다.")
         }
     }
 

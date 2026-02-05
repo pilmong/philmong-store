@@ -43,6 +43,7 @@ export async function getAvailableProducts() {
 }
 
 export type MenuPlanInput = {
+    id?: string
     planDate: Date
     productId: string
     price: number
@@ -50,18 +51,66 @@ export type MenuPlanInput = {
     descriptionOverride?: string
 }
 
+export async function updateMenuPlanDescription(id: string, description: string) {
+    try {
+        await prisma.menuPlan.update({
+            where: { id },
+            data: { descriptionOverride: description }
+        })
+        revalidatePath('/admin/menus')
+        return { success: true }
+    } catch (error) {
+        console.error("Update error:", error)
+        return { success: false, error: "Failed to update description" }
+    }
+}
+
 export async function upsertMenuPlan(data: MenuPlanInput) {
     try {
-        const plan = await prisma.menuPlan.create({
-            data: {
-                planDate: data.planDate,
-                productId: data.productId,
-                price: data.price,
-                quantityLimit: data.quantityLimit,
-                descriptionOverride: data.descriptionOverride,
-                status: 'OPEN'
+        let plan;
+        if (data.id) {
+            plan = await prisma.menuPlan.update({
+                where: { id: data.id },
+                data: {
+                    price: data.price,
+                    quantityLimit: data.quantityLimit,
+                    descriptionOverride: data.descriptionOverride,
+                }
+            })
+        } else {
+            // Check if plan already exists for this product on this day to avoid duplicates
+            const existing = await prisma.menuPlan.findFirst({
+                where: {
+                    planDate: {
+                        gte: startOfDay(data.planDate),
+                        lte: endOfDay(data.planDate)
+                    },
+                    productId: data.productId
+                }
+            })
+
+            if (existing) {
+                plan = await prisma.menuPlan.update({
+                    where: { id: existing.id },
+                    data: {
+                        price: data.price,
+                        quantityLimit: data.quantityLimit,
+                        descriptionOverride: data.descriptionOverride,
+                    }
+                })
+            } else {
+                plan = await prisma.menuPlan.create({
+                    data: {
+                        planDate: data.planDate,
+                        productId: data.productId,
+                        price: data.price,
+                        quantityLimit: data.quantityLimit,
+                        descriptionOverride: data.descriptionOverride,
+                        status: 'OPEN'
+                    }
+                })
             }
-        })
+        }
 
         revalidatePath('/admin/menus')
         return { success: true, data: plan }
