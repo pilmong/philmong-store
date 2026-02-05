@@ -108,8 +108,10 @@ export function MenuCalendar() {
         }
 
         setIsSaving(true)
-        await upsertMenuPlan(input)
-        await fetchPlans(date)
+        const res = await upsertMenuPlan(input)
+        if (res.success && res.allPlans) {
+            setPlans(res.allPlans as any)
+        }
         setIsSaving(false)
         setIsAdding(false)
 
@@ -121,8 +123,10 @@ export function MenuCalendar() {
 
     async function handleDelete(id: string) {
         if (!confirm("정말 삭제하시겠습니까?")) return
-        await deleteMenuPlan(id)
-        if (date) await fetchPlans(date)
+        const res = await deleteMenuPlan(id)
+        if (res.success && res.allPlans) {
+            setPlans(res.allPlans as any)
+        }
     }
 
     // When product changes, update default price
@@ -196,8 +200,8 @@ export function MenuCalendar() {
         // Special logic for Salad Ingredients: if no salad is planned yet, create one first
         if (editingSlot.label === '재료' && !targetId) {
             const res = await createProductAndPlan("오늘의 샐러드", "SALAD", "MAIN_DISH", date, 7000)
-            if (res.success && res.data) {
-                targetId = res.data.id
+            if (res.success && res.plan) {
+                targetId = res.plan.id
             } else {
                 alert("샐러드 메뉴 생성에 실패했습니다.")
                 return
@@ -210,8 +214,8 @@ export function MenuCalendar() {
         }
 
         const res = await updateMenuPlanDescription(targetId, textInputValue)
-        if (res.success) {
-            await fetchPlans(date)
+        if (res.success && res.allPlans) {
+            setPlans(res.allPlans as any)
             setTextEditOpen(false)
         } else {
             alert("저장에 실패했습니다.")
@@ -229,9 +233,11 @@ export function MenuCalendar() {
         if (type === 'REGULAR') type = 'LUNCH_BOX'
         if (type === 'LUNCH_BOX' && category === 'MAIN_DISH') category = 'LUNCH_MAIN'
 
-        await createProductAndPlan(name, type, category, date, 0)
-        await fetchPlans(date)
-        setSearchOpen(false)
+        const res = await createProductAndPlan(name, type, category, date, 0)
+        if (res.success && res.allPlans) {
+            setPlans(res.allPlans as any)
+            setSearchOpen(false)
+        }
         setSearchQuery("")
     }
 
@@ -294,7 +300,7 @@ export function MenuCalendar() {
                                             const sides: any[] = []
 
                                             plans.filter(p => p.product.type === 'LUNCH_BOX').forEach(p => {
-                                                const cat = p.product.category
+                                                const cat = p.product.category as string
                                                 const item = { id: p.id, text: p.product.name, isEmpty: false }
 
                                                 if (cat === 'LUNCH_RICE') slots.rice = item
@@ -325,11 +331,11 @@ export function MenuCalendar() {
                                             else handleSlotClick('재료', id, 'TEXT')
                                         }}
                                         main={(() => {
-                                            const p = plans.find(x => x.product.category === 'SALAD_MAIN' || x.product.type === 'SALAD')
+                                            const p = plans.find(x => (x.product.category as string) === 'SALAD_MAIN' || x.product.type === 'SALAD')
                                             return p ? { id: p.id, text: p.product.name, isEmpty: false } : { text: "눌러서 선택", isEmpty: true }
                                         })()}
                                         ingredients={(() => {
-                                            const p = plans.find(x => x.product.category === 'SALAD_MAIN' || x.product.type === 'SALAD')
+                                            const p = plans.find(x => (x.product.category as string) === 'SALAD_MAIN' || x.product.type === 'SALAD')
                                             // Show description override as ingredients, or product desc if empty
                                             const text = p?.descriptionOverride || p?.product.description || ""
                                             return p ? { id: p.id, text: text || "재료 입력 (클릭)", isEmpty: false } : { text: "", isEmpty: true }
@@ -417,7 +423,7 @@ export function MenuCalendar() {
                     <CommandGroup heading="추천 메뉴">
                         {products
                             .filter(p => {
-                                const catMatch = activeSlotFilter.length === 0 || activeSlotFilter.includes(p.category || '')
+                                const catMatch = activeSlotFilter.length === 0 || activeSlotFilter.includes(p.category as string || '')
                                 const typeMatch = activeTypeFilter.length === 0 || activeTypeFilter.includes(p.type || '')
                                 return catMatch && typeMatch
                             })
@@ -425,16 +431,17 @@ export function MenuCalendar() {
                                 <CommandItem
                                     key={product.id}
                                     value={product.name}
-                                    onSelect={() => {
+                                    onSelect={async () => {
                                         const input: MenuPlanInput = {
                                             planDate: date!,
                                             productId: product.id,
                                             price: product.basePrice,
                                         }
-                                        upsertMenuPlan(input).then(() => {
-                                            fetchPlans(date!)
+                                        const res = await upsertMenuPlan(input)
+                                        if (res.success && res.allPlans) {
+                                            setPlans(res.allPlans as any)
                                             setSearchOpen(false)
-                                        })
+                                        }
                                     }}
                                 >
                                     <div className="flex items-center gap-2">

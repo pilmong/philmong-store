@@ -53,12 +53,13 @@ export type MenuPlanInput = {
 
 export async function updateMenuPlanDescription(id: string, description: string) {
     try {
-        await prisma.menuPlan.update({
+        const updated = await prisma.menuPlan.update({
             where: { id },
             data: { descriptionOverride: description }
         })
         revalidatePath('/admin/menus')
-        return { success: true }
+        const plans = await getMenuPlans(updated.planDate)
+        return { success: true, plan: updated, allPlans: plans.data }
     } catch (error) {
         console.error("Update error:", error)
         return { success: false, error: "Failed to update description" }
@@ -113,7 +114,8 @@ export async function upsertMenuPlan(data: MenuPlanInput) {
         }
 
         revalidatePath('/admin/menus')
-        return { success: true, data: plan }
+        const plans = await getMenuPlans(plan.planDate)
+        return { success: true, plan, allPlans: plans.data }
     } catch (error) {
         console.error("Failed to save menu plan:", error)
         return { success: false, error: "Failed to save menu plan" }
@@ -122,9 +124,10 @@ export async function upsertMenuPlan(data: MenuPlanInput) {
 
 export async function deleteMenuPlan(id: string) {
     try {
-        await prisma.menuPlan.delete({ where: { id } })
+        const deleted = await prisma.menuPlan.delete({ where: { id } })
         revalidatePath('/admin/menus')
-        return { success: true }
+        const plans = await getMenuPlans(deleted.planDate)
+        return { success: true, allPlans: plans.data }
     } catch (error) {
         return { success: false, error: "Failed to delete" }
     }
