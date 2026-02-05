@@ -156,7 +156,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     }))
 
                     alert("상품이 수정되었습니다.")
-                    router.push("/admin/products")
                     router.refresh()
                 } else {
                     alert("수정 실패: " + result.error)

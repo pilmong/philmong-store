@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { Input } from "@/components/ui/input"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import {
     Select,
     SelectContent,
@@ -33,12 +34,18 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
-    MAIN_DISH: "메인요리",
-    SOUP: "국/찌개",
-    SIDE_DISH: "반찬",
-    KIMCHI: "김치",
-    PICKLE: "절임/젓갈",
-    SAUCE: "소스/양념",
+    TODAY_MENU: "오늘의 메뉴",
+    MAIN_DISH: "요리 곁들임",
+    SOUP: "국물 곁들임",
+    SIDE_DISH: "반찬 곁들임",
+    KIMCHI: "김치 곁들임",
+    PICKLE: "장아찌 곁들임",
+    SAUCE: "청/소스 곁들임",
+    LUNCH_RICE: "도시락 밥",
+    LUNCH_SOUP: "도시락 국",
+    LUNCH_MAIN: "도시락 메인",
+    LUNCH_SIDE: "도시락 반찬",
+    SALAD_MAIN: "샐러드 메인",
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -52,10 +59,41 @@ interface ProductListProps {
 }
 
 export function ProductList({ initialProducts }: ProductListProps) {
-    const [search, setSearch] = useState("")
-    const [typeFilter, setTypeFilter] = useState<string>("ALL")
-    const [categoryFilter, setCategoryFilter] = useState<string>("ALL")
-    const [statusFilter, setStatusFilter] = useState<string>("ALL")
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    // Initialize state from URL params
+    const [search, setSearch] = useState(searchParams.get('search') || "")
+    const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('type') || "ALL")
+    const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('category') || "ALL")
+    const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || "ALL")
+
+    // Update URL when filters change
+    const updateQueryParams = useCallback((updates: Record<string, string>) => {
+        const params = new URLSearchParams(searchParams.toString())
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === "ALL" || value === "") {
+                params.delete(key)
+            } else {
+                params.set(key, value)
+            }
+        })
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [searchParams, router, pathname])
+
+    // Effect to sync URL with local state on changes
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            updateQueryParams({
+                search,
+                type: typeFilter,
+                category: categoryFilter,
+                status: statusFilter
+            })
+        }, 300) // Debounce search
+        return () => clearTimeout(timer)
+    }, [search, typeFilter, categoryFilter, statusFilter, updateQueryParams])
 
     const filteredProducts = useMemo(() => {
         return initialProducts.filter((product) => {

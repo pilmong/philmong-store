@@ -17,9 +17,9 @@ interface MenuListProps {
 
 const CATEGORIES = [
     { id: 'ALL', label: '전체' },
-    { id: 'DAILY', label: '데일리' },
-    { id: 'MAIN', label: '요리' },
-    { id: 'SOUP', label: '국/찌개' },
+    { id: 'DAILY', label: '오늘의 메뉴' },
+    { id: 'MAIN', label: '요리/곁들임' },
+    { id: 'SOUP', label: '국물' },
     { id: 'SIDE', label: '반찬/김치' },
     { id: 'ETC', label: '샐러드/기타' },
 ]
@@ -33,7 +33,7 @@ export function MenuList({ date, plans }: MenuListProps) {
         return plans.filter(({ product }) => {
             switch (selectedCategory) {
                 case 'DAILY':
-                    return product.type === ProductType.DAILY
+                    return (product.category as string) === 'TODAY_MENU' || product.type === ProductType.DAILY
                 case 'MAIN':
                     return product.category === ProductCategory.MAIN_DISH
                 case 'SOUP':
@@ -136,7 +136,14 @@ function MenuListItem({ product }: { product: Product }) {
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between mb-1">
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 text-slate-500 border-slate-200">
-                        {product.category || '기타'}
+                        {(product.category as string) === 'TODAY_MENU' ? "오늘의 메뉴" :
+                            (product.category as string) === 'MAIN_DISH' ? "요리 곁들임" :
+                                (product.category as string) === 'SOUP' ? "국물 곁들임" :
+                                    (product.category as string) === 'SIDE_DISH' ? "반찬 곁들임" :
+                                        (product.category as string) === 'KIMCHI' ? "김치 곁들임" :
+                                            (product.category as string) === 'PICKLE' ? "장아찌 곁들임" :
+                                                (product.category as string) === 'SAUCE' ? "청/소스 곁들임" :
+                                                    (product.category as string) || '기타'}
                     </Badge>
                     {product.type === 'DAILY' && (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-orange-50 text-orange-600 hover:bg-orange-100">

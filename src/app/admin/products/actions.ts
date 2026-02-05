@@ -79,6 +79,7 @@ export async function updateProduct(id: string, data: ProductCreateInput) {
         revalidatePath(`/admin/products/${id}`)
         return { success: true, data: product }
     } catch (error) {
+        console.error("Update error detail:", error)
         return { success: false, error: "Failed to update product" }
     }
 }
@@ -89,6 +90,7 @@ export async function deleteProduct(id: string) {
         revalidatePath('/admin/products')
         return { success: true }
     } catch (error) {
-        return { success: false, error: "Failed to delete product" }
+        console.error("Delete error detail:", error)
+        return { success: false, error: "상품이 식단 편성 등에 사용 중이라 삭제할 수 없습니다. 먼저 관련 식단을 삭제해 주세요." }
     }
 }
