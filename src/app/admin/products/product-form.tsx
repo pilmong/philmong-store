@@ -56,6 +56,11 @@ const CATEGORY_LABEL: Record<string, string> = {
     KIMCHI: "김치",
     PICKLE: "절임/젓갈",
     SAUCE: "소스/양념",
+    LUNCH_RICE: "도시락 밥",
+    LUNCH_SOUP: "도시락 국",
+    LUNCH_MAIN: "도시락 메인",
+    LUNCH_SIDE: "도시락 반찬",
+    SALAD_MAIN: "샐러드 메인",
 }
 
 const WORK_DIVISION_LABEL: Record<string, string> = {

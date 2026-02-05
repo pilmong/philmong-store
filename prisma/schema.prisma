@@ -154,6 +154,13 @@ enum ProductCategory {
   KIMCHI    // 김치 곁들임
   PICKLE    // 젓갈/장아찌 곁들임
   SAUCE     // 수제청/소스 곁들임
+
+  // B2B 전용 카테고리 (독립 운영)
+  LUNCH_RICE // 도시락 밥
+  LUNCH_SOUP // 도시락 국
+  LUNCH_MAIN // 도시락 메인
+  LUNCH_SIDE // 도시락 반찬
+  SALAD_MAIN // 샐러드 메인
 }
 
 enum B2BPaymentMethod {

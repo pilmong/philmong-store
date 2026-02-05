@@ -147,30 +147,32 @@ export function MenuCalendar() {
         if (type === 'PRODUCT') {
             // Configure Category Filters
             let filterVals: string[] = []
-            if (label === '메인') filterVals = ['MAIN_DISH']
-            else if (label === '국') filterVals = ['SOUP']
-            else if (label === '밥') filterVals = ['RICE', 'REGULAR']
-            else if (label.startsWith('반찬')) filterVals = ['SIDE_DISH', 'KIMCHI', 'PICKLE', 'SAUCE']
-            else if (label === '샐러드 메인') filterVals = ['SALAD', 'MAIN_DISH'] // Allow Main Dish as Salad too
-            else if (label === '데일리') filterVals = ['DAILY']
-            else if (label === '스페셜') filterVals = ['SPECIAL']
+            if (label === '메인') filterVals = ['LUNCH_MAIN']
+            else if (label === '국') filterVals = ['LUNCH_SOUP']
+            else if (label === '밥') filterVals = ['LUNCH_RICE']
+            else if (label.startsWith('반찬')) filterVals = ['LUNCH_SIDE']
+            else if (label === '샐러드 메인') filterVals = ['SALAD_MAIN']
+            else if (label === '데일리') filterVals = ['MAIN_DISH', 'SOUP', 'SIDE_DISH']
+            else if (label === '스페셜') filterVals = ['MAIN_DISH']
 
             setActiveSlotFilter(filterVals)
 
             // Type Filter
-            if (['데일리', '스페셜'].includes(label)) {
-                setActiveTypeFilter([label === '데일리' ? 'DAILY' : 'SPECIAL'])
-            } else if (label === '샐러드 메인') {
+            if (label === '데일리') {
+                setActiveTypeFilter(['DAILY'])
+            } else if (label === '스페셜') {
+                setActiveTypeFilter(['SPECIAL'])
+            } else if (label === '샐러드 메인' || label === '재료') {
                 setActiveTypeFilter(['SALAD'])
             } else {
-                setActiveTypeFilter(['LUNCH_BOX', 'REGULAR'])
+                setActiveTypeFilter(['LUNCH_BOX'])
             }
 
             setSearchOpen(true)
         } else {
             // Text Edit (Salad Ingredients)
             // Find current text?
-            // Need to pass current text in id or separate arg? 
+            // Need to pass current text in id or separate arg?
             // For simplify, we fetch plan text by id if exists, or empty
             if (id) {
                 const plan = plans.find(p => p.id === id)
@@ -221,10 +223,11 @@ export function MenuCalendar() {
         if (!name.trim() || !date) return
 
         let type = activeTypeFilter.length > 0 ? activeTypeFilter[0] : 'LUNCH_BOX'
-        let category = activeSlotFilter.length > 0 ? activeSlotFilter[0] : 'MAIN_DISH'
+        let category = activeSlotFilter.length > 0 ? activeSlotFilter[0] : 'LUNCH_MAIN'
 
         // Final fallback if something is weird
         if (type === 'REGULAR') type = 'LUNCH_BOX'
+        if (type === 'LUNCH_BOX' && category === 'MAIN_DISH') category = 'LUNCH_MAIN'
 
         await createProductAndPlan(name, type, category, date, 0)
         await fetchPlans(date)
@@ -290,13 +293,14 @@ export function MenuCalendar() {
                                             }
                                             const sides: any[] = []
 
-                                            plans.filter(p => p.product.type === 'LUNCH_BOX' || p.product.type === 'REGULAR').forEach(p => {
+                                            plans.filter(p => p.product.type === 'LUNCH_BOX').forEach(p => {
                                                 const cat = p.product.category
                                                 const item = { id: p.id, text: p.product.name, isEmpty: false }
 
-                                                if (cat === 'SOUP') slots.soup = item
-                                                else if (cat === 'MAIN_DISH') slots.main = item
-                                                else if (['SIDE_DISH', 'KIMCHI', 'PICKLE', 'SAUCE'].includes(cat || '')) sides.push(item)
+                                                if (cat === 'LUNCH_RICE') slots.rice = item
+                                                else if (cat === 'LUNCH_SOUP') slots.soup = item
+                                                else if (cat === 'LUNCH_MAIN') slots.main = item
+                                                else if (cat === 'LUNCH_SIDE') sides.push(item)
                                             })
 
                                             if (sides.length > 0) slots.side1 = sides[0]
@@ -321,11 +325,11 @@ export function MenuCalendar() {
                                             else handleSlotClick('재료', id, 'TEXT')
                                         }}
                                         main={(() => {
-                                            const p = plans.find(x => x.product.type === 'SALAD')
+                                            const p = plans.find(x => x.product.category === 'SALAD_MAIN' || x.product.type === 'SALAD')
                                             return p ? { id: p.id, text: p.product.name, isEmpty: false } : { text: "눌러서 선택", isEmpty: true }
                                         })()}
                                         ingredients={(() => {
-                                            const p = plans.find(x => x.product.type === 'SALAD')
+                                            const p = plans.find(x => x.product.category === 'SALAD_MAIN' || x.product.type === 'SALAD')
                                             // Show description override as ingredients, or product desc if empty
                                             const text = p?.descriptionOverride || p?.product.description || ""
                                             return p ? { id: p.id, text: text || "재료 입력 (클릭)", isEmpty: false } : { text: "", isEmpty: true }
