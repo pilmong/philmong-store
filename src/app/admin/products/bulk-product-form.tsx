@@ -15,7 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProductType, ProductCategory, WorkDivision, ProductStatus } from "@prisma/client"
 import { bulkCreateProducts } from "./actions"
-import { Plus, Trash2, Loader2, Save } from "lucide-react"
+import { Plus, Trash2, Loader2, Save, Keyboard } from "lucide-react"
+import { useRef, useEffect } from "react"
 
 // Translation Maps (Synced with product-form.tsx)
 const TYPE_LABEL: Record<string, string> = {
@@ -65,8 +66,18 @@ export function BulkProductForm() {
 
     // Items List
     const [items, setItems] = useState([{ name: "", basePrice: 0, description: "" }])
+    const firstNameInputRef = useRef<HTMLInputElement>(null)
 
-    const addItem = () => setItems([...items, { name: "", basePrice: 0, description: "" }])
+    const addItem = () => {
+        setItems([...items, { name: "", basePrice: 0, description: "" }])
+    }
+
+    // Auto-focus the first input of the newly added row
+    useEffect(() => {
+        if (items.length > 1) {
+            firstNameInputRef.current?.focus()
+        }
+    }, [items.length])
     const removeItem = (index: number) => {
         if (items.length === 1) return
         setItems(items.filter((_, i) => i !== index))
@@ -112,8 +123,29 @@ export function BulkProductForm() {
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent, index: number, field: 'name' | 'basePrice' | 'description') => {
+        // Enter to submit
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            onSubmit()
+            return
+        }
+
+        // Tab on the last field of the last row to add a new row
+        if (e.key === 'Tab' && !e.shiftKey && index === items.length - 1 && field === 'description') {
+            e.preventDefault()
+            addItem()
+        }
+    }
+
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-400 text-xs">
+                    <Keyboard className="w-4 h-4" />
+                    <span>팁: [Tab]으로 행 추가, [Enter]로 즉시 저장</span>
+                </div>
+            </div>
             {/* Common Settings Card */}
             <Card className="border-orange-100 bg-orange-50/10">
                 <CardHeader>
@@ -210,10 +242,12 @@ export function BulkProductForm() {
                                         <td className="px-6 py-4 text-slate-400 font-mono text-xs">{index + 1}</td>
                                         <td className="px-6 py-4">
                                             <Input
+                                                ref={index === items.length - 1 ? firstNameInputRef : null}
                                                 placeholder="예: 어향가지덮밥"
                                                 value={item.name}
                                                 className="border-transparent focus:border-slate-200 bg-transparent hover:bg-white"
                                                 onChange={(e) => updateItem(index, 'name', e.target.value)}
+                                                onKeyDown={(e) => handleKeyDown(e, index, 'name')}
                                             />
                                         </td>
                                         <td className="px-6 py-4">
@@ -227,6 +261,7 @@ export function BulkProductForm() {
                                                         const val = e.target.value.replace(/[^0-9]/g, '')
                                                         updateItem(index, 'basePrice', val === '' ? 0 : Number(val))
                                                     }}
+                                                    onKeyDown={(e) => handleKeyDown(e, index, 'basePrice')}
                                                 />
                                                 <span className="absolute right-2 top-2.5 text-slate-400 text-[10px]">원</span>
                                             </div>
@@ -237,6 +272,7 @@ export function BulkProductForm() {
                                                 value={item.description}
                                                 className="border-transparent focus:border-slate-200 bg-transparent hover:bg-white"
                                                 onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                                onKeyDown={(e) => handleKeyDown(e, index, 'description')}
                                             />
                                         </td>
                                         <td className="px-6 py-4 text-center">
