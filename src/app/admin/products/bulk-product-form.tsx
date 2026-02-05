@@ -161,7 +161,7 @@ export function BulkProductForm() {
                             <SelectTrigger className="bg-white">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" className="max-h-[500px]">
                                 {Object.values(ProductType).map(t => (
                                     <SelectItem key={t} value={t}>{TYPE_LABEL[t] || t}</SelectItem>
                                 ))}
@@ -175,7 +175,7 @@ export function BulkProductForm() {
                             <SelectTrigger className="bg-white">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" className="max-h-[500px]">
                                 {Object.values(ProductCategory).map(c => (
                                     <SelectItem key={c} value={c}>{CATEGORY_LABEL[c] || c}</SelectItem>
                                 ))}
@@ -189,7 +189,7 @@ export function BulkProductForm() {
                             <SelectTrigger className="bg-white">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" className="max-h-[500px]">
                                 {Object.values(WorkDivision).map(d => (
                                     <SelectItem key={d} value={d}>{WORK_DIVISION_LABEL[d] || d}</SelectItem>
                                 ))}
@@ -203,7 +203,7 @@ export function BulkProductForm() {
                             <SelectTrigger className="bg-white">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" className="max-h-[500px]">
                                 {Object.values(ProductStatus).map(s => (
                                     <SelectItem key={s} value={s}>{STATUS_LABEL[s] || s}</SelectItem>
                                 ))}

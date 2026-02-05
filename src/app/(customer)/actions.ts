@@ -7,6 +7,7 @@ export async function getTodayMenu() {
     try {
         const today = new Date()
 
+        // 1. Fetch planned items for today
         const menuPlans = await prisma.menuPlan.findMany({
             where: {
                 planDate: {
@@ -16,15 +17,49 @@ export async function getTodayMenu() {
             },
             include: {
                 product: true
-            },
-            orderBy: {
-                product: {
-                    basePrice: 'desc'
-                }
             }
         })
 
-        return { success: true, data: menuPlans }
+        // 2. Fetch permanent (REGULAR) items that are currently SELLING
+        const permanentProducts = await prisma.product.findMany({
+            where: {
+                type: 'REGULAR',
+                status: 'SELLING'
+            }
+        })
+
+        // 3. Combine and remove duplicates (if a permanent product is also in the plan)
+        // We use productId as the unique key
+        const plannedProductIds = new Set(menuPlans.map(p => p.productId))
+
+        const combinedData = [...menuPlans]
+
+        permanentProducts.forEach(product => {
+            if (!plannedProductIds.has(product.id)) {
+                // Mock a MenuPlan structure for consistency with the UI
+                combinedData.push({
+                    id: `perm-${product.id}`,
+                    planDate: today,
+                    productId: product.id,
+                    product: product,
+                    price: product.basePrice,
+                    quantityLimit: null,
+                    soldQuantity: 0,
+                    descriptionOverride: null,
+                    status: 'OPEN',
+                    createdAt: product.createdAt,
+                    updatedAt: product.updatedAt
+                } as any)
+            }
+        })
+
+        // 4. Sort by category or price for better display
+        combinedData.sort((a, b) => {
+            // Sort by price descending as before
+            return b.product.basePrice - a.product.basePrice
+        })
+
+        return { success: true, data: combinedData }
     } catch (error) {
         console.error("Failed to fetch today menu:", error)
         return { success: false, error: "오늘의 메뉴를 불러오지 못했습니다." }

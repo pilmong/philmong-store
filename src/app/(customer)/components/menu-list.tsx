@@ -16,32 +16,40 @@ interface MenuListProps {
 }
 
 const CATEGORIES = [
-    { id: 'ALL', label: '전체' },
+    { id: 'BEST', label: '인기상품' },
     { id: 'DAILY', label: '오늘의 메뉴' },
-    { id: 'MAIN', label: '요리/곁들임' },
-    { id: 'SOUP', label: '국물' },
-    { id: 'SIDE', label: '반찬/김치' },
-    { id: 'ETC', label: '샐러드/기타' },
+    { id: 'MAIN', label: '요리곁들임' },
+    { id: 'SIDE', label: '반찬곁들임' },
+    { id: 'SOUP_KIMCHI', label: '국물/김치곁들임' },
+    { id: 'EXTRAS', label: '장아찌/청/소스 곁들임' },
+    { id: 'LUNCH', label: '런치메뉴' },
 ]
 
 export function MenuList({ date, plans }: MenuListProps) {
-    const [selectedCategory, setSelectedCategory] = useState('ALL')
+    const [selectedCategory, setSelectedCategory] = useState('BEST')
 
     const filteredPlans = useMemo(() => {
-        if (selectedCategory === 'ALL') return plans
+        let items = plans
 
-        return plans.filter(({ product }) => {
+        if (selectedCategory === 'BEST') {
+            // Sort by soldQuantity descending for BEST category
+            return [...items].sort((a, b) => (b.soldQuantity || 0) - (a.soldQuantity || 0))
+        }
+
+        return items.filter(({ product }) => {
             switch (selectedCategory) {
                 case 'DAILY':
                     return (product.category as string) === 'TODAY_MENU' || product.type === ProductType.DAILY
                 case 'MAIN':
                     return product.category === ProductCategory.MAIN_DISH
-                case 'SOUP':
-                    return product.category === ProductCategory.SOUP
                 case 'SIDE':
-                    return [ProductCategory.SIDE_DISH, ProductCategory.KIMCHI, ProductCategory.PICKLE].includes(product.category as any)
-                case 'ETC':
-                    return product.type === ProductType.SALAD || product.type === ProductType.LUNCH_BOX || product.category === ProductCategory.SAUCE
+                    return product.category === ProductCategory.SIDE_DISH
+                case 'SOUP_KIMCHI':
+                    return product.category === ProductCategory.SOUP || product.category === ProductCategory.KIMCHI
+                case 'EXTRAS':
+                    return product.category === ProductCategory.PICKLE || product.category === ProductCategory.SAUCE
+                case 'LUNCH':
+                    return product.type === ProductType.LUNCH_BOX || product.type === ProductType.SALAD || (product.category as string)?.startsWith('LUNCH_')
                 default:
                     return true
             }
@@ -68,7 +76,7 @@ export function MenuList({ date, plans }: MenuListProps) {
                 </h2>
 
                 {/* Category Tabs */}
-                <div className="flex overflow-x-auto pb-2 md:pb-0 gap-2 no-scrollbar">
+                <div className="flex overflow-x-auto pb-4 md:pb-0 gap-2 scrollbar-thin">
                     {CATEGORIES.map((cat) => (
                         <button
                             key={cat.id}

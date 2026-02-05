@@ -1,17 +1,19 @@
 'use client'
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export function ProductListShortcuts() {
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Ctrl + Q for New Product
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'q') {
                 e.preventDefault()
-                router.push("/admin/products/new")
+                const params = searchParams.toString()
+                router.push(`/admin/products/new${params ? `?${params}` : ''}`)
             }
         }
 

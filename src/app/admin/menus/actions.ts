@@ -133,7 +133,7 @@ export async function deleteMenuPlan(id: string) {
     }
 }
 
-import { ProductType, ProductCategory } from "@prisma/client"
+import { Product, ProductType, ProductCategory } from "@prisma/client"
 
 export async function createProductAndPlan(
     name: string,
@@ -163,5 +163,74 @@ export async function createProductAndPlan(
     } catch (error) {
         console.error("Failed to create and plan:", error)
         return { success: false, error: "Failed to create new product" }
+    }
+}
+
+export async function updateProduct(id: string, data: Partial<Product>) {
+    try {
+        const updated = await prisma.product.update({
+            where: { id },
+            data: {
+                name: data.name,
+                type: data.type,
+                category: data.category,
+                basePrice: data.basePrice,
+                description: data.description,
+                status: data.status
+            }
+        })
+        return { success: true, data: updated }
+    } catch (error) {
+        console.error("Failed to update product:", error)
+        return { success: false, error: "Failed to update product" }
+    }
+}
+
+export async function copyMenuPlans(sourceDate: Date, targetDate: Date) {
+    try {
+        // 1. Get source plans
+        const sourcePlans = await prisma.menuPlan.findMany({
+            where: {
+                planDate: {
+                    gte: startOfDay(sourceDate),
+                    lte: endOfDay(sourceDate)
+                }
+            }
+        })
+
+        if (sourcePlans.length === 0) {
+            return { success: false, error: "복사할 식단이 없습니다." }
+        }
+
+        // 2. Clear target plans (Optional, but safer for a clean copy)
+        await prisma.menuPlan.deleteMany({
+            where: {
+                planDate: {
+                    gte: startOfDay(targetDate),
+                    lte: endOfDay(targetDate)
+                }
+            }
+        })
+
+        // 3. Create new plans for target date
+        await prisma.$transaction(
+            sourcePlans.map(plan => prisma.menuPlan.create({
+                data: {
+                    planDate: targetDate, // Use startOfDay(targetDate) or exact targetDate
+                    productId: plan.productId,
+                    price: plan.price,
+                    quantityLimit: plan.quantityLimit,
+                    descriptionOverride: plan.descriptionOverride,
+                    status: 'OPEN'
+                }
+            }))
+        )
+
+        const plans = await getMenuPlans(targetDate)
+        revalidatePath('/admin/menus')
+        return { success: true, allPlans: plans.data }
+    } catch (error) {
+        console.error("Failed to copy menu plans:", error)
+        return { success: false, error: "식단 복사에 실패했습니다." }
     }
 }

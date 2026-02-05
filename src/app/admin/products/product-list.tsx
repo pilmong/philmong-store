@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Product, ProductType, ProductCategory, ProductStatus } from "@prisma/client"
 import Link from "next/link"
 import { Search, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // Translation Maps
 const TYPE_LABEL: Record<string, string> = {
@@ -95,6 +96,19 @@ export function ProductList({ initialProducts }: ProductListProps) {
         return () => clearTimeout(timer)
     }, [search, typeFilter, categoryFilter, statusFilter, updateQueryParams])
 
+    // Sync state with URL when searchParams change (e.g. Back button)
+    useEffect(() => {
+        const urlSearch = searchParams.get('search') || ""
+        const urlType = searchParams.get('type') || "ALL"
+        const urlCategory = searchParams.get('category') || "ALL"
+        const urlStatus = searchParams.get('status') || "ALL"
+
+        if (urlSearch !== search) setSearch(urlSearch)
+        if (urlType !== typeFilter) setTypeFilter(urlType)
+        if (urlCategory !== categoryFilter) setCategoryFilter(urlCategory)
+        if (urlStatus !== statusFilter) setStatusFilter(urlStatus)
+    }, [searchParams]) // Only check when URL changes
+
     const filteredProducts = useMemo(() => {
         return initialProducts.filter((product) => {
             const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase())
@@ -136,7 +150,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
                         <SelectTrigger className="bg-white">
                             <SelectValue placeholder="모든 유형" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="max-h-[600px]">
                             <SelectItem value="ALL">모든 유형</SelectItem>
                             {Object.values(ProductType).map((type) => (
                                 <SelectItem key={type} value={type}>{TYPE_LABEL[type] || type}</SelectItem>
@@ -151,7 +165,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
                         <SelectTrigger className="bg-white">
                             <SelectValue placeholder="모든 카테고리" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="max-h-[600px]">
                             <SelectItem value="ALL">모든 카테고리</SelectItem>
                             {Object.values(ProductCategory).map((cat) => (
                                 <SelectItem key={cat} value={cat}>{CATEGORY_LABEL[cat] || cat}</SelectItem>
@@ -166,7 +180,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
                         <SelectTrigger className="bg-white">
                             <SelectValue placeholder="모든 상태" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="max-h-[600px]">
                             <SelectItem value="ALL">모든 상태</SelectItem>
                             {Object.values(ProductStatus).map((status) => (
                                 <SelectItem key={status} value={status}>{STATUS_LABEL[status] || status}</SelectItem>
@@ -175,11 +189,17 @@ export function ProductList({ initialProducts }: ProductListProps) {
                     </Select>
                 </div>
 
-                {isFiltered && (
-                    <Button variant="ghost" onClick={resetFilters} className="h-10">
-                        <X className="mr-2 h-4 w-4" /> 초기화
-                    </Button>
-                )}
+                <Button
+                    variant="ghost"
+                    onClick={resetFilters}
+                    disabled={!isFiltered}
+                    className={cn(
+                        "h-10 px-3 transition-opacity whitespace-nowrap",
+                        !isFiltered ? "opacity-20 cursor-default" : "opacity-100 hover:bg-slate-100 text-slate-600 font-medium"
+                    )}
+                >
+                    <X className="mr-1.5 h-4 w-4" /> 초기화
+                </Button>
             </div>
 
             <div className="text-sm text-muted-foreground ml-1">

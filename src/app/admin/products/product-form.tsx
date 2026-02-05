@@ -178,7 +178,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     }))
 
                     alert("상품이 등록되었습니다.")
-                    router.push("/admin/products")
+                    const params = searchParams.toString()
+                    router.push(`/admin/products${params ? `?${params}` : ''}`)
                     router.refresh()
                 } else {
                     alert("등록 실패: " + result.error)
@@ -198,7 +199,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
         const result = await deleteProduct(initialData.id)
         if (result.success) {
             alert("상품이 삭제되었습니다.")
-            router.push("/admin/products")
+            const params = searchParams.toString()
+            router.push(`/admin/products${params ? `?${params}` : ''}`)
             router.refresh()
         } else {
             alert("삭제 실패: " + result.error)
@@ -285,7 +287,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                             <SelectValue placeholder="유형 선택" />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                                    <SelectContent position="popper" className="max-h-[500px]">
                                         {Object.values(ProductType).map((type) => (
                                             <SelectItem key={type} value={type}>{TYPE_LABEL[type] || type}</SelectItem>
                                         ))}
@@ -308,7 +310,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                             <SelectValue placeholder="카테고리 선택" />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                                    <SelectContent position="popper" className="max-h-[500px]">
                                         {Object.values(ProductCategory).map((cat) => (
                                             <SelectItem key={cat} value={cat}>{CATEGORY_LABEL[cat] || cat}</SelectItem>
                                         ))}
@@ -333,7 +335,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                             <SelectValue placeholder="작업 구분 선택" />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                                    <SelectContent position="popper" className="max-h-[500px]">
                                         {Object.values(WorkDivision).map((div) => (
                                             <SelectItem key={div} value={div}>{WORK_DIVISION_LABEL[div] || div}</SelectItem>
                                         ))}
@@ -355,7 +357,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                             <SelectValue placeholder="상태 선택" />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                                    <SelectContent position="popper" className="max-h-[500px]">
                                         {Object.values(ProductStatus).map((status) => (
                                             <SelectItem key={status} value={status}>{STATUS_LABEL[status] || status}</SelectItem>
                                         ))}
