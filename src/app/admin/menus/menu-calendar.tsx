@@ -123,8 +123,16 @@ export function MenuCalendar() {
 
     async function handleDelete(id: string) {
         if (!confirm("정말 삭제하시겠습니까?")) return
+
+        // Optimistic Update
+        const previousPlans = [...plans]
+        setPlans(plans.filter(p => p.id !== id))
+
         const res = await deleteMenuPlan(id)
-        if (res.success && res.allPlans) {
+        if (!res.success) {
+            alert("삭제에 실패했습니다. 다시 시도해 주세요.")
+            setPlans(previousPlans)
+        } else if (res.allPlans) {
             setPlans(res.allPlans as any)
         }
     }
@@ -213,12 +221,19 @@ export function MenuCalendar() {
             return
         }
 
+        const previousPlans = [...plans]
+        // Temporary UI update for text (ingredients)
+        if (targetId) {
+            setPlans(plans.map(p => p.id === targetId ? { ...p, descriptionOverride: textInputValue } : p))
+        }
+        setTextEditOpen(false)
+
         const res = await updateMenuPlanDescription(targetId, textInputValue)
         if (res.success && res.allPlans) {
             setPlans(res.allPlans as any)
-            setTextEditOpen(false)
         } else {
             alert("저장에 실패했습니다.")
+            setPlans(previousPlans)
         }
         setIsSaving(false)
     }
@@ -236,8 +251,10 @@ export function MenuCalendar() {
         const res = await createProductAndPlan(name, type, category, date, 0)
         if (res.success && res.allPlans) {
             setPlans(res.allPlans as any)
-            setSearchOpen(false)
+        } else {
+            alert("메뉴 생성에 실패했습니다.")
         }
+        setSearchOpen(false)
         setSearchQuery("")
     }
 
@@ -432,15 +449,18 @@ export function MenuCalendar() {
                                     key={product.id}
                                     value={product.name}
                                     onSelect={async () => {
+                                        setSearchOpen(false) // Close immediately for speed
                                         const input: MenuPlanInput = {
                                             planDate: date!,
                                             productId: product.id,
                                             price: product.basePrice,
                                         }
+
                                         const res = await upsertMenuPlan(input)
                                         if (res.success && res.allPlans) {
                                             setPlans(res.allPlans as any)
-                                            setSearchOpen(false)
+                                        } else {
+                                            alert("저장에 실패했습니다.")
                                         }
                                     }}
                                 >
