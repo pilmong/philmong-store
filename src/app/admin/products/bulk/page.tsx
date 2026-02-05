@@ -1,7 +1,8 @@
 import { BulkProductForm } from "../bulk-product-form"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Loader2 } from "lucide-react"
+import { Suspense } from "react"
 
 export default function BulkProductPage() {
     return (
@@ -16,7 +17,13 @@ export default function BulkProductPage() {
                 </div>
             </div>
 
-            <BulkProductForm />
+            <Suspense fallback={
+                <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                </div>
+            }>
+                <BulkProductForm />
+            </Suspense>
         </div>
     )
 }

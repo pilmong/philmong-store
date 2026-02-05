@@ -12,6 +12,8 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { ProductListShortcuts } from "./product-list-shortcuts"
 import { ProductList } from "./product-list"
+import { Suspense } from "react"
+import { Loader2 } from "lucide-react"
 
 export default async function ProductsPage() {
     const { success, data: products } = await getProducts()
@@ -39,7 +41,13 @@ export default async function ProductsPage() {
                 </div>
             </div>
 
-            <ProductList initialProducts={products} />
+            <Suspense fallback={
+                <div className="flex justify-center py-20 bg-white border rounded-lg">
+                    <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                </div>
+            }>
+                <ProductList initialProducts={products} />
+            </Suspense>
         </div>
     )
 }
