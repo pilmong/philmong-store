@@ -22,7 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { createProduct, updateProduct, deleteProduct } from "./actions"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { ProductType, ProductCategory, WorkDivision, ProductStatus, Product } from "@prisma/client"
 
@@ -82,6 +82,7 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData }: ProductFormProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
     const [mounted, setMounted] = useState(false)
 
@@ -156,6 +157,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
                     }))
 
                     alert("상품이 수정되었습니다.")
+                    const params = searchParams.toString()
+                    router.push(`/admin/products${params ? `?${params}` : ''}`)
                     router.refresh()
                 } else {
                     alert("수정 실패: " + result.error)

@@ -226,7 +226,7 @@ export function ProductList({ initialProducts }: ProductListProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Link href={`/admin/products/${product.id}`}>
+                                        <Link href={`/admin/products/${product.id}?${searchParams.toString()}`}>
                                             <Button variant="outline" size="sm">수정</Button>
                                         </Link>
                                     </TableCell>
