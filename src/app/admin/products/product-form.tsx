@@ -50,12 +50,13 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
-    MAIN_DISH: "메인요리",
-    SOUP: "국/찌개",
-    SIDE_DISH: "반찬",
-    KIMCHI: "김치",
-    PICKLE: "절임/젓갈",
-    SAUCE: "소스/양념",
+    TODAY_MENU: "오늘의 메뉴",
+    MAIN_DISH: "요리 곁들임",
+    SOUP: "국물 곁들임",
+    SIDE_DISH: "반찬 곁들임",
+    KIMCHI: "김치 곁들임",
+    PICKLE: "장아찌 곁들임",
+    SAUCE: "청/소스 곁들임",
     LUNCH_RICE: "도시락 밥",
     LUNCH_SOUP: "도시락 국",
     LUNCH_MAIN: "도시락 메인",

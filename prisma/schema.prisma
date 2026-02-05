@@ -148,12 +148,13 @@ enum ProductType {
 }
 
 enum ProductCategory {
-  MAIN_DISH // 요리 곁들임
-  SOUP      // 국물 곁들임
-  SIDE_DISH // 반찬 곁들임
-  KIMCHI    // 김치 곁들임
-  PICKLE    // 젓갈/장아찌 곁들임
-  SAUCE     // 수제청/소스 곁들임
+  TODAY_MENU // 오늘의 메뉴
+  MAIN_DISH  // 요리 곁들임
+  SOUP       // 국물 곁들임
+  SIDE_DISH  // 반찬 곁들임
+  KIMCHI     // 김치 곁들임
+  PICKLE     // 장아찌 곁들임
+  SAUCE      // 청/소스 곁들임
 
   // B2B 전용 카테고리 (독립 운영)
   LUNCH_RICE // 도시락 밥

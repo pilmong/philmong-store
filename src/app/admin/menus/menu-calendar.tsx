@@ -164,8 +164,8 @@ export function MenuCalendar() {
             else if (label === '밥') filterVals = ['LUNCH_RICE']
             else if (label.startsWith('반찬')) filterVals = ['LUNCH_SIDE']
             else if (label === '샐러드 메인') filterVals = ['SALAD_MAIN']
-            else if (label === '데일리') filterVals = ['MAIN_DISH', 'SOUP', 'SIDE_DISH']
-            else if (label === '스페셜') filterVals = ['MAIN_DISH']
+            else if (label === '데일리') filterVals = ['TODAY_MENU', 'MAIN_DISH', 'SOUP', 'SIDE_DISH', 'KIMCHI', 'PICKLE']
+            else if (label === '스페셜') filterVals = ['TODAY_MENU', 'MAIN_DISH']
 
             setActiveSlotFilter(filterVals)
 
