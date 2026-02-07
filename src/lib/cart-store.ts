@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Product } from '@prisma/client'
 import { format } from 'date-fns'
+import { getKSTDate } from './utils'
 
 export interface CartItem {
     product: Product
@@ -20,11 +21,9 @@ interface CartStore {
     totalPrice: () => number
 }
 
-// 한국 시간 기준 날짜 문자열 가져오기
+// 한국 시간 기준 날짜 문자열 가져오기 (utils의 공통 기능 활용)
 const getTodayStr = () => {
-    const now = new Date()
-    const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000))
-    return format(kst, "yyyy-MM-dd")
+    return format(getKSTDate(), "yyyy-MM-dd")
 }
 
 export const useCartStore = create<CartStore>()(
