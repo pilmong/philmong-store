@@ -9,13 +9,15 @@ import { getUserSession, logoutUser } from "../auth/actions"
 
 export function CustomerHeader() {
     const totalItems = useCartStore(state => state.totalItems())
+    const checkAndReset = useCartStore(state => state.checkAndReset)
     const [mounted, setMounted] = useState(false)
     const [user, setUser] = useState<any>(null)
 
     useEffect(() => {
         setMounted(true)
+        checkAndReset() // 장바구니 날짜 유효성 체크 및 초기화
         getUserSession().then(setUser)
-    }, [])
+    }, [checkAndReset])
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

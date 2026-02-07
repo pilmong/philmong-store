@@ -79,8 +79,8 @@ export async function getDailyOperations(date: Date) {
         let storeLunchQty = 0
         let storeSaladQty = 0
         storeOrderItems.forEach(item => {
-            if (item.menuPlan.product.type === 'LUNCH_BOX') storeLunchQty += item.quantity
-            else if (item.menuPlan.product.type === 'SALAD') storeSaladQty += item.quantity
+            if (item.menuPlan?.product.type === 'LUNCH_BOX') storeLunchQty += item.quantity
+            else if (item.menuPlan?.product.type === 'SALAD') storeSaladQty += item.quantity
         })
 
         if (storeLunchQty > 0 || storeSaladQty > 0) {

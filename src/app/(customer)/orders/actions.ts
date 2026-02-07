@@ -5,6 +5,7 @@ import { OrderStatus, PaymentStatus, DeliveryType, ProductType } from "@prisma/c
 import { format } from "date-fns"
 import { getKSTRange, getKSTDate, isOrderDeadlinePassed } from "@/lib/utils"
 import { getSystemPolicy } from "@/app/admin/settings/actions"
+import { PUBLIC_HOLIDAYS_2026 } from "@/lib/constants"
 
 interface OrderInput {
     userId?: string
@@ -93,40 +94,78 @@ export async function createOrder(data: OrderInput) {
 
         // 3. Create Order Transaction
         const result = await prisma.$transaction(async (tx) => {
+            // [SECURITY] 3-0. Strict Holiday/Closure Check
+            const holiday = await tx.holiday.findFirst({
+                where: {
+                    date: { gte: start, lte: end }
+                }
+            })
+
+            const dayOfWeek = today.getDay()
+            const isPublicHoliday = !!PUBLIC_HOLIDAYS_2026[orderDateStr.substring(0, 4) + "-" + orderDateStr.substring(4, 6) + "-" + orderDateStr.substring(6, 8)]
+
+            if (holiday) {
+                if (holiday.isStoreClosed) {
+                    throw new Error(`죄송합니다. 오늘은 [${holiday.reason || "정기 휴무"}]로 인해 주문을 받을 수 없습니다.`)
+                }
+            } else if (dayOfWeek === 0 || dayOfWeek === 6 || isPublicHoliday) {
+                throw new Error("죄송합니다. 오늘은 주말/공휴일 정기 휴무로 인해 주문이 불가능합니다.")
+            }
+
             let totalAmount = 0
             const orderItemsCreate = []
 
             for (const item of data.items) {
+                // 3-1. Check in today's plans
                 const plan = todayPlans.find(p => p.productId === item.productId)
 
-                if (!plan) {
-                    throw new Error(`오늘의 메뉴 정보를 찾을 수 없습니다. (ID: ${item.productId})`)
+                if (plan) {
+                    // Deadline check for Lunchbox/Salad
+                    const isLunchOrSalad = plan.product.type === ProductType.LUNCH_BOX || plan.product.type === ProductType.SALAD
+                    if (isLunchOrSalad && isOrderDeadlinePassed(plan.planDate, deadlineHour, isSameDay)) {
+                        const basisText = isSameDay ? "당일" : "전날"
+                        throw new Error(`${plan.product.name}은(는) 예약이 마감된 상품입니다. (${basisText} ${deadlineHour}시 마감)`)
+                    }
+
+                    const price = plan.price
+                    const amount = price * item.quantity
+                    totalAmount += amount
+
+                    // Update Sold Quantity
+                    await tx.menuPlan.update({
+                        where: { id: plan.id },
+                        data: { soldQuantity: { increment: item.quantity } }
+                    })
+
+                    orderItemsCreate.push({
+                        menuPlanId: plan.id,
+                        productName: plan.product.name,
+                        price: price,
+                        quantity: item.quantity,
+                        amount: amount
+                    } as any)
+                } else {
+                    // 3-2. Check if it's a REGULAR product currently SELLING (e.g. Rice, Soup side items)
+                    const product = await tx.product.findUnique({
+                        where: { id: item.productId }
+                    })
+
+                    if (!product || product.status !== 'SELLING' || product.type === ProductType.LUNCH_BOX || product.type === ProductType.SALAD) {
+                        throw new Error(`선택하신 상품(${product?.name || "알 수 없음"})은 현재 주문 가능한 메뉴가 아닙니다. 장바구니를 비우고 다시 시도해 주세요.`)
+                    }
+
+                    const price = product.basePrice
+                    const amount = price * item.quantity
+                    totalAmount += amount
+
+                    orderItemsCreate.push({
+                        menuPlanId: null, // No plan for permanent selling items
+                        productName: product.name,
+                        price: price,
+                        quantity: item.quantity,
+                        amount: amount
+                    } as any)
                 }
-
-                // Deadline check for Lunchbox/Salad
-                const isLunchOrSalad = plan.product.type === ProductType.LUNCH_BOX || plan.product.type === ProductType.SALAD
-                if (isLunchOrSalad && isOrderDeadlinePassed(plan.planDate, deadlineHour, isSameDay)) {
-                    const basisText = isSameDay ? "당일" : "전날"
-                    throw new Error(`${plan.product.name}은(는) 예약이 마감된 상품입니다. (${basisText} ${deadlineHour}시 마감)`)
-                }
-
-                const price = plan.price
-                const amount = price * item.quantity
-                totalAmount += amount
-
-                // Update Sold Quantity
-                await tx.menuPlan.update({
-                    where: { id: plan.id },
-                    data: { soldQuantity: { increment: item.quantity } }
-                })
-
-                orderItemsCreate.push({
-                    menuPlanId: plan.id,
-                    productName: plan.product.name,
-                    price: price,
-                    quantity: item.quantity,
-                    amount: amount
-                })
             }
 
             totalAmount += data.delivery.fee

@@ -430,12 +430,12 @@ model Order {
 }
 
 model OrderItem {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  menuPlanId  String
-  menuPlan    MenuPlan @relation(fields: [menuPlanId], references: [id])
+  menuPlanId  String?
+  menuPlan    MenuPlan? @relation(fields: [menuPlanId], references: [id])
   
   productName String
   price       Int
