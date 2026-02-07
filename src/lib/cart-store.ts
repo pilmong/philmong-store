@@ -80,8 +80,9 @@ export const useCartStore = create<CartStore>()(
 
             checkAndReset: () => set((state) => {
                 const today = getTodayStr()
-                if (state.cartDate && state.cartDate !== today) {
-                    console.log("Cart date mismatch. Resetting cart.", { prev: state.cartDate, today })
+                // 날짜 정보가 없거나, 현재 날짜와 다른데 장바구니에 물건이 있다면 초기화
+                if (state.items.length > 0 && state.cartDate !== today) {
+                    console.log("Cart session expired or invalid. Resetting.", { prev: state.cartDate, today })
                     return { items: [], cartDate: null }
                 }
                 return {}
