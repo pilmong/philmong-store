@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { upsertDeliveryZone, type DeliveryZoneInput } from "./actions"
 import { DeliveryZone } from "@prisma/client"
 import { Plus, Edit } from "lucide-react"
@@ -25,6 +25,11 @@ interface DeliveryZoneDialogProps {
 export function DeliveryZoneDialog({ zone }: DeliveryZoneDialogProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Form States
     const [name, setName] = useState(zone?.name || "")
@@ -64,6 +69,14 @@ export function DeliveryZoneDialog({ zone }: DeliveryZoneDialogProps) {
         setPrice(3000)
         setAreasInput("")
         setIsActive(true)
+    }
+
+    if (!mounted) {
+        return zone ? (
+            <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+        ) : (
+            <Button><Plus className="mr-2 h-4 w-4" /> 배달 구역 추가</Button>
+        )
     }
 
     return (

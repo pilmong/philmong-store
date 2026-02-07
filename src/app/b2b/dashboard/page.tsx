@@ -11,6 +11,7 @@ import { startOfWeek, endOfWeek, addDays, format, addWeeks, subWeeks, isSameDay 
 import { ko } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
+import { isOrderDeadlinePassed } from "@/lib/utils"
 
 export default function B2BDashboardPage() {
     const router = useRouter()
@@ -172,6 +173,7 @@ export default function B2BDashboardPage() {
                             const dateStr = format(day, "yyyy-MM-dd")
                             const dayValues = inputValues[dateStr] || { lunch: "0", salad: "0", note: "" }
                             const isToday = isSameDay(day, new Date())
+                            const isDeadlinePassed = isOrderDeadlinePassed(day)
 
                             return (
                                 <div key={dateStr} className={`bg-white p-5 rounded-xl border shadow-sm ${isToday ? 'border-primary ring-1 ring-primary/20' : ''}`}>
@@ -184,7 +186,12 @@ export default function B2BDashboardPage() {
                                             </div>
 
                                             <div className="flex flex-col w-full gap-2">
-                                                <div className="font-medium mb-1 hidden md:block">{format(day, "M월 d일")}</div>
+                                                <div className="flex items-center gap-2 mb-1 hidden md:flex">
+                                                    <span className="font-medium">{format(day, "M월 d일")}</span>
+                                                    {isDeadlinePassed && (
+                                                        <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">마감됨</span>
+                                                    )}
+                                                </div>
                                                 <div className="flex gap-2">
                                                     <div className="flex-1 bg-slate-50 p-2 rounded border">
                                                         <label className="text-[10px] text-slate-500 font-bold block mb-1">도시락</label>
@@ -193,6 +200,7 @@ export default function B2BDashboardPage() {
                                                             className="bg-white text-lg font-bold text-center h-9 p-0"
                                                             value={dayValues.lunch}
                                                             onChange={(e) => handleInputChange(dateStr, 'lunch', e.target.value)}
+                                                            disabled={isDeadlinePassed}
                                                         />
                                                     </div>
                                                     <div className="flex-1 bg-slate-50 p-2 rounded border">
@@ -202,6 +210,7 @@ export default function B2BDashboardPage() {
                                                             className="bg-white text-lg font-bold text-center h-9 p-0"
                                                             value={dayValues.salad}
                                                             onChange={(e) => handleInputChange(dateStr, 'salad', e.target.value)}
+                                                            disabled={isDeadlinePassed}
                                                         />
                                                     </div>
                                                 </div>
@@ -216,6 +225,7 @@ export default function B2BDashboardPage() {
                                                 value={dayValues.note}
                                                 onChange={(e) => handleInputChange(dateStr, 'note', e.target.value)}
                                                 className="text-sm bg-slate-50/50"
+                                                disabled={isDeadlinePassed}
                                             />
                                         </div>
                                     </div>

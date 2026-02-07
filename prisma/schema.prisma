@@ -192,6 +192,7 @@ model Client {
   // B2B Payment & Price Info
   paymentMethod   B2BPaymentMethod @default(CARD)
   paymentTiming   B2BPaymentTiming @default(IMMEDIATE)
+  paymentDay      Int?          // 결제일 (예: 25일)
   lunchUnitPrice  Int           @default(7000) // Default price, adjustable per client
   saladUnitPrice  Int           @default(7000)
 
@@ -294,7 +295,29 @@ model ClientOrder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  logs      ClientOrderLog[]
+
   @@unique([clientId, date])
+}
+
+model ClientOrderLog {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     ClientOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  date      DateTime @default(now()) // 변경 시각
+  actorType String   // "ADMIN" | "CLIENT"
+  actorName String   // 변경자 이름
+  actorId   String?  // 변경자 ID (Account ID 또는 Client ID)
+
+  oldLunchQty Int
+  newLunchQty Int
+  oldSaladQty Int
+  newSaladQty Int
+  
+  action    String   // "CREATE" | "UPDATE"
+  
+  @@index([orderId])
 }
 
 // --- Delivery & Coupons ---
@@ -468,3 +491,31 @@ model UserCoupon {
 }
 
 
+// --- System Settings ---
+
+
+model SystemPolicy {
+  key       String   @id // ex: "B2B_DEADLINE_HOUR", "B2C_DEADLINE_HOUR"
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// --- Holiday Management ---
+
+enum HolidayType {
+  PUBLIC    // 법정공휴일
+  REGULAR   // 정기휴무
+  TEMPORARY // 임시휴무
+}
+
+model Holiday {
+  id            String      @id @default(uuid())
+  date          DateTime    @unique // 휴무 날짜 (시간은 00:00:00 처리)
+  type          HolidayType @default(TEMPORARY)
+  category      String      @default("HOLIDAY") // ex: HOLIDAY, EDUCATION, ERRAND, PERSONAL
+  reason        String?     // 사유 (ex: 설날, 개인사정, 직원교육)
+  isStoreClosed Boolean     @default(true)      // 실제 영업 중단 여부
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}

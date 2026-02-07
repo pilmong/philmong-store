@@ -3,6 +3,8 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
+import { B2BPaymentMethod, B2BPaymentTiming } from "@prisma/client"
+
 export type ClientInput = {
     name: string
     code?: string
@@ -10,6 +12,9 @@ export type ClientInput = {
     contact?: string
     address?: string
     note?: string
+    paymentMethod?: B2BPaymentMethod
+    paymentTiming?: B2BPaymentTiming
+    paymentDay?: number | null
 }
 
 export async function getClients() {

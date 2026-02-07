@@ -40,9 +40,6 @@ export function AdminHeader() {
                                         <ListItem href="/admin/daily-operations" title="작업/배송 관리">
                                             일일 조리 및 배송 송장 출력
                                         </ListItem>
-                                        <ListItem href="/b2b/login" title="고객사 포털 (Login Link)" target="_blank">
-                                            B2B 고객 전용 로그인 페이지
-                                        </ListItem>
                                     </ul>
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
@@ -80,6 +77,12 @@ export function AdminHeader() {
                                         <ListItem href="/admin/delivery-zones" title="배달 구역 (Zones)">
                                             배송 가능 지역 설정
                                         </ListItem>
+                                        <ListItem href="/admin/holidays" title="휴무일 관리 (Holidays)">
+                                            연간 달력 및 공휴일 운영 설정
+                                        </ListItem>
+                                        <ListItem href="/admin/settings" title="시스템 설정 (Settings)">
+                                            마감 시각 및 운영 정책 설정
+                                        </ListItem>
                                     </ul>
                                 </NavigationMenuContent>
                             </NavigationMenuItem>
@@ -88,8 +91,14 @@ export function AdminHeader() {
                     </NavigationMenu>
                 </div>
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+                    <Button variant="outline" asChild size="sm" className="bg-blue-50/50 hover:bg-blue-50 border-blue-200 text-blue-700">
+                        <Link href="/b2b/login" target="_blank">
+                            <ShoppingBag className="mr-2 h-4 w-4" />
+                            고객사 포털
+                        </Link>
+                    </Button>
                     <Button variant="outline" asChild size="sm">
-                        <Link href="/">
+                        <Link href="/" target="_blank">
                             <Store className="mr-2 h-4 w-4" />
                             스토어
                         </Link>

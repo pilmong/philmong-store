@@ -1,8 +1,10 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
+import { isOrderDeadlinePassed, getKSTRange } from "@/lib/utils"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { getSystemPolicy } from "@/app/admin/settings/actions"
 
 const COOKIE_NAME = "philmong_b2b_session"
 
@@ -94,26 +96,62 @@ export async function getClientOrders(clientId: string, startDate: Date, endDate
 export async function updateClientOrder(clientId: string, date: Date, lunchQty: number, saladQty: number, note?: string) {
     if (!clientId) return { success: false, message: "Client ID required" }
 
+    // Deadline check
+    const deadlineHourStr = await getSystemPolicy("B2B_DEADLINE_HOUR", "15")
+    const deadlineHour = parseInt(deadlineHourStr)
+    const deadlineBasis = await getSystemPolicy("B2B_DEADLINE_BASIS", "PREVIOUS")
+    const isSameDay = deadlineBasis === "SAME"
+
+    if (isOrderDeadlinePassed(date, deadlineHour, isSameDay)) {
+        const basisText = isSameDay ? "당일" : "전날"
+        return { success: false, message: `주문 마감 시간이 지났습니다. (${basisText} ${deadlineHour}시 마감)` }
+    }
+
     try {
-        await prisma.clientOrder.upsert({
+        const { start } = getKSTRange(date)
+
+        // Find existing order for logging
+        const existingOrder = await prisma.clientOrder.findUnique({
+            where: { clientId_date: { clientId, date: start } }
+        })
+
+        const order = await prisma.clientOrder.upsert({
             where: {
                 clientId_date: {
                     clientId: clientId,
-                    date: date
+                    date: start
                 }
             },
             update: {
                 lunchBoxQuantity: lunchQty,
                 saladQuantity: saladQty,
-                note: note // Update note if provided
+                note: note
             },
             create: {
                 clientId: clientId,
-                date: date,
+                date: start,
                 lunchBoxQuantity: lunchQty,
                 saladQuantity: saladQty,
                 note: note,
                 status: "PENDING"
+            }
+        })
+
+        // Get Client Info for Logging
+        const client = await prisma.client.findUnique({ where: { id: clientId } })
+
+        // Create Log
+        await prisma.clientOrderLog.create({
+            data: {
+                orderId: order.id,
+                actorType: "CLIENT",
+                actorName: client?.name || "B2B Client",
+                actorId: clientId,
+                oldLunchQty: existingOrder?.lunchBoxQuantity || 0,
+                newLunchQty: lunchQty,
+                oldSaladQty: existingOrder?.saladQuantity || 0,
+                newSaladQty: saladQty,
+                action: existingOrder ? "UPDATE" : "CREATE"
             }
         })
 

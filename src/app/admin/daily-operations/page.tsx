@@ -13,8 +13,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { SaladViewer } from "../components/salad-viewer"
 import { LunchBoxGuide } from "../components/lunchbox-guide"
 import { Invoice } from "../components/invoice"
-import { getDailyOperations } from "./actions"
-import { ChevronLeft, ChevronRight, RefreshCw, Printer } from "lucide-react"
+import { getDailyOperations, updateClientOrderAction, getOrderLogs } from "./actions"
+import { ChevronLeft, ChevronRight, RefreshCw, Printer, Edit2, History, ArrowRight } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 // ... inside page component ...
 
@@ -26,6 +34,12 @@ export default function DailyOperationsPage() {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [printTarget, setPrintTarget] = useState<any>(null)
+    const [editingClient, setEditingClient] = useState<any>(null)
+    const [viewingLogs, setViewingLogs] = useState<any>(null)
+    const [orderLogs, setOrderLogs] = useState<any[]>([])
+    const [logsLoading, setLogsLoading] = useState(false)
+    const [editValues, setEditValues] = useState({ lunch: 0, salad: 0, note: "" })
+    const [saving, setSaving] = useState(false)
 
     // Invoice Print Ref
     const invoiceRef = useRef<HTMLDivElement>(null)
@@ -56,6 +70,47 @@ export default function DailyOperationsPage() {
     useEffect(() => {
         loadData()
     }, [date])
+
+    const handleOpenEdit = (client: any) => {
+        setEditingClient(client)
+        setEditValues({
+            lunch: client.lunchQty,
+            salad: client.saladQty,
+            note: client.dailyNote || ""
+        })
+    }
+
+    const handleSaveEdit = async () => {
+        if (!editingClient) return
+        setSaving(true)
+        const res = await updateClientOrderAction(
+            editingClient.id,
+            date,
+            editValues.lunch,
+            editValues.salad,
+            editValues.note
+        )
+        if (res.success) {
+            toast.success("수량이 저장되었습니다.")
+            setEditingClient(null)
+            loadData()
+        } else {
+            toast.error(res.error)
+        }
+        setSaving(false)
+    }
+
+    const handleViewLogs = async (client: any) => {
+        setViewingLogs(client)
+        setLogsLoading(true)
+        const res = await getOrderLogs(client.id, date)
+        if (res.success) {
+            setOrderLogs(res.logs)
+        } else {
+            toast.error(res.error)
+        }
+        setLogsLoading(false)
+    }
 
     const PaymentBadge = ({ method, timing }: { method: string, timing: string }) => {
         const isCash = method === 'CASH'
@@ -124,6 +179,16 @@ export default function DailyOperationsPage() {
                         </div>
                     </CardContent>
                 </Card>
+                <Card className="bg-slate-50 border-slate-200">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-800">전체 상품 합계</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-4xl font-bold text-slate-900">
+                            {(data?.summary.totalLunch || 0) + (data?.summary.totalSalad || 0)} <span className="text-lg font-normal text-slate-600">EA</span>
+                        </div>
+                    </CardContent>
+                </Card>
                 <Card className="bg-green-50 border-green-200">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-green-800">총 샐러드 수량</CardTitle>
@@ -163,7 +228,7 @@ export default function DailyOperationsPage() {
                                         slots={data?.menuSlots || {
                                             rice: { text: "밥", isEmpty: true },
                                             soup: { text: "국", isEmpty: true },
-                                            main: { text: "메인반찬", isEmpty: true },
+                                            main: { text: "메인", isEmpty: true },
                                             side1: { text: "반찬1", isEmpty: true },
                                             side2: { text: "반찬2", isEmpty: true },
                                             side3: { text: "반찬3", isEmpty: true }
@@ -197,7 +262,7 @@ export default function DailyOperationsPage() {
                 <div className="lg:col-span-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle>🚛 배송 및 결제 장부</CardTitle>
+                            <CardTitle>🚛 B2B 고객별 작업 현황</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
@@ -207,8 +272,9 @@ export default function DailyOperationsPage() {
                                             <th className="p-3 text-left">고객사</th>
                                             <th className="p-3 text-center">도시락</th>
                                             <th className="p-3 text-center">샐러드</th>
-                                            <th className="p-3 text-right">금액</th>
-                                            <th className="p-3 text-center">결제정보</th>
+                                            <th className="p-3 text-center bg-slate-100/50 font-bold">합계</th>
+                                            <th className="p-3 text-right text-slate-400 font-normal">정산 금액</th>
+                                            <th className="p-3 text-center text-slate-400 font-normal">결제 정보</th>
                                             <th className="p-3 text-left">특이사항</th>
                                             <th className="p-3 text-center">관리</th>
                                         </tr>
@@ -217,36 +283,64 @@ export default function DailyOperationsPage() {
                                         {data?.clients.map((client: any) => (
                                             <tr key={client.id} className="hover:bg-slate-50/50">
                                                 <td className="p-3 font-medium">{client.name}</td>
-                                                <td className="p-3 text-center">
+                                                <td className="p-3 text-center border-x">
                                                     {client.lunchQty > 0 ? <span className="font-bold text-blue-600">{client.lunchQty}</span> : "-"}
                                                 </td>
-                                                <td className="p-3 text-center">
+                                                <td className="p-3 text-center border-r">
                                                     {client.saladQty > 0 ? <span className="font-bold text-green-600">{client.saladQty}</span> : "-"}
                                                 </td>
-                                                <td className="p-3 text-right font-medium">
-                                                    {(client.totalAmount || 0).toLocaleString()}
+                                                <td className="p-3 text-center bg-slate-50 font-bold text-slate-900 border-r">
+                                                    {client.lunchQty + client.saladQty > 0 ? (client.lunchQty + client.saladQty) : "-"}
                                                 </td>
-                                                <td className="p-3 text-center">
-                                                    <div className="flex justify-center">
+                                                <td className="p-3 text-right text-slate-400 border-r">
+                                                    {(client.totalAmount || 0).toLocaleString()}원
+                                                </td>
+                                                <td className="p-3 text-center border-r">
+                                                    <div className="flex flex-col items-center justify-center gap-1 opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 transition-all">
                                                         <PaymentBadge method={client.paymentMethod} timing={client.paymentTiming} />
+                                                        {client.paymentDay > 0 && (
+                                                            <div className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                                {client.paymentDay === 99 ? "말일" : `${client.paymentDay}일`}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </td>
-                                                <td className="p-3 text-xs max-w-[150px]">
+                                                <td className="p-3 text-xs max-w-[150px] border-r">
                                                     {client.generalNote && <div className="text-amber-600 mb-1">📢 {client.generalNote}</div>}
-                                                    {client.dailyNote && <div className="text-slate-600">📝 {client.dailyNote}</div>}
+                                                    {client.dailyNote && <div className="text-slate-600 font-medium">📝 {client.dailyNote}</div>}
                                                 </td>
                                                 <td className="p-3 text-center">
-                                                    {(client.lunchQty > 0 || client.saladQty > 0) && (
+                                                    <div className="flex justify-center gap-1">
                                                         <Button
-                                                            variant="outline"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
+                                                            onClick={() => handleViewLogs(client)}
+                                                            title="변경 기록 보기"
+                                                        >
+                                                            <History className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
                                                             size="sm"
                                                             className="h-8 w-8 p-0"
-                                                            onClick={() => setPrintTarget(client)}
-                                                            title="거래명세표 인쇄"
+                                                            onClick={() => handleOpenEdit(client)}
+                                                            title="수량 수정"
                                                         >
-                                                            <Printer className="h-4 w-4" />
+                                                            <Edit2 className="h-4 w-4" />
                                                         </Button>
-                                                    )}
+                                                        {(client.lunchQty > 0 || client.saladQty > 0) && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 w-8 p-0"
+                                                                onClick={() => setPrintTarget(client)}
+                                                                title="거래명세표 인쇄"
+                                                            >
+                                                                <Printer className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -258,12 +352,133 @@ export default function DailyOperationsPage() {
                                             </tr>
                                         )}
                                     </tbody>
+                                    {data?.clients.length > 0 && (
+                                        <tfoot className="bg-slate-100/80 font-bold border-t-2 border-slate-200">
+                                            <tr>
+                                                <td className="p-3 text-center">총계 (Grand Total)</td>
+                                                <td className="p-3 text-center text-blue-700 text-lg border-x">{data.summary.totalLunch}</td>
+                                                <td className="p-3 text-center text-green-700 text-lg border-r">{data.summary.totalSalad}</td>
+                                                <td className="p-3 text-center text-slate-900 text-xl bg-slate-200/50 border-r">
+                                                    {data.summary.totalLunch + data.summary.totalSalad}
+                                                </td>
+                                                <td className="p-3 text-right text-slate-500 text-xs border-r">
+                                                    {data.summary.totalRevenue.toLocaleString()}원
+                                                </td>
+                                                <td className="p-3 text-center border-r">-</td>
+                                                <td className="p-3 text-left border-r">-</td>
+                                                <td className="p-3 text-center">-</td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
                                 </table>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {/* Admin Edit Dialog */}
+            <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{editingClient?.name} 수량 수정</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-6 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>도시락 (Lunch Box)</Label>
+                                <Input
+                                    type="number"
+                                    value={editValues.lunch}
+                                    onChange={e => setEditValues(prev => ({ ...prev, lunch: parseInt(e.target.value) || 0 }))}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>샐러드 (Salad)</Label>
+                                <Input
+                                    type="number"
+                                    value={editValues.salad}
+                                    onChange={e => setEditValues(prev => ({ ...prev, salad: parseInt(e.target.value) || 0 }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>특이사항 (해당 일자 전용)</Label>
+                            <Input
+                                placeholder="생오이 제외 등..."
+                                value={editValues.note}
+                                onChange={e => setEditValues(prev => ({ ...prev, note: e.target.value }))}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingClient(null)}>취소</Button>
+                        <Button onClick={handleSaveEdit} disabled={saving}>
+                            {saving ? "저장 중..." : "변경사항 저장"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Audit Log Dialog */}
+            <Dialog open={!!viewingLogs} onOpenChange={(open) => !open && setViewingLogs(null)}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{viewingLogs?.name} 변경 기록</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        {logsLoading ? (
+                            <div className="flex justify-center p-8">
+                                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : orderLogs.length === 0 ? (
+                            <div className="text-center p-8 text-muted-foreground">변경 내역이 없습니다.</div>
+                        ) : (
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                                {orderLogs.map((log) => (
+                                    <div key={log.id} className="border-l-2 border-slate-200 pl-4 py-1 relative">
+                                        <div className="absolute w-2 h-2 bg-slate-400 rounded-full -left-[5px] top-2" />
+                                        <div className="flex justify-between items-start mb-1 text-xs">
+                                            <span className="font-bold text-slate-700">
+                                                {log.actorName} ({log.actorType === 'ADMIN' ? '관리자' : '고객사'})
+                                            </span>
+                                            <span className="text-slate-400">
+                                                {format(new Date(log.date), "HH:mm:ss", { locale: ko })}
+                                            </span>
+                                        </div>
+                                        <div className="text-[13px] bg-slate-50 p-2 rounded border">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex-1">
+                                                    <div className="text-[10px] text-slate-400">도시락</div>
+                                                    <div className="flex items-center gap-1 font-medium">
+                                                        <span>{log.oldLunchQty}</span>
+                                                        <ArrowRight className="w-3 h-3 text-slate-300" />
+                                                        <span className="text-blue-600 font-bold">{log.newLunchQty}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="text-[10px] text-slate-400">샐러드</div>
+                                                    <div className="flex items-center gap-1 font-medium">
+                                                        <span>{log.oldSaladQty}</span>
+                                                        <ArrowRight className="w-3 h-3 text-slate-300" />
+                                                        <span className="text-green-600 font-bold">{log.newSaladQty}</span>
+                                                    </div>
+                                                </div>
+                                                <div className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${log.action === 'CREATE' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                    {log.action === 'CREATE' ? '최초' : '수정'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" className="w-full" onClick={() => setViewingLogs(null)}>닫기</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

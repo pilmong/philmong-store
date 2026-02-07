@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { useState, useEffect } from "react"
-import { getMenuPlans, getAvailableProducts, upsertMenuPlan, deleteMenuPlan, createProductAndPlan, updateMenuPlanDescription, copyMenuPlans, type MenuPlanInput } from "./actions"
+import { getMenuPlans, getAvailableProducts, upsertMenuPlan, deleteMenuPlan, createProductAndPlan, updateMenuPlanDescription, copyMenuPlans, clearMenuPlans, type MenuPlanInput } from "./actions"
 import { Product, MenuPlan, ProductType, ProductCategory, WorkDivision, ProductStatus } from "@prisma/client"
 import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Loader2, Copy, Search, BookOpen, UtensilsCrossed, Save, Pencil } from "lucide-react"
@@ -46,11 +46,11 @@ import {
 type MenuPlanWithProduct = MenuPlan & { product: Product }
 
 const CATEGORY_LABELS = {
-    LUNCH_MAIN: "도시락 메인",
-    LUNCH_SOUP: "도시락 국",
-    LUNCH_RICE: "도시락 밥",
-    LUNCH_SIDE: "도시락 반찬",
-    SALAD_MAIN: "샐러드 메인",
+    LUNCH_MAIN: "한끼든든 도시락 메인",
+    LUNCH_SOUP: "한끼든든 도시락 국",
+    LUNCH_RICE: "한끼든든 도시락 밥",
+    LUNCH_SIDE: "한끼든든 도시락 반찬",
+    SALAD_MAIN: "한끼든든 샐러드 메인",
     TODAY_MENU: "오늘의 메뉴",
     MAIN_DISH: "요리 곁들임",
     SOUP: "국물 곁들임",
@@ -100,6 +100,8 @@ export function MenuCalendar() {
     const [textInputValue, setTextInputValue] = useState("")
     const [isSaving, setIsSaving] = useState(false)
     const [activePlannerTab, setActivePlannerTab] = useState("lunchbox")
+    const libraryListRef = React.useRef<HTMLDivElement>(null)
+    const searchInputRef = React.useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         loadProducts()
@@ -326,6 +328,21 @@ export function MenuCalendar() {
         else { alert(res.error || "식단 복사에 실패했습니다.") }
     }
 
+    const handleClear = async (type?: ProductType) => {
+        if (!date) return
+        const typeLabel = type === 'LUNCH_BOX' ? '도시락' : type === 'SALAD' ? '샐러드' : type === 'DAILY' ? '데일리' : type === 'SPECIAL' ? '특별' : '전체';
+        if (!confirm(`${format(date, "M월 d일")}의 ${typeLabel} 식단을 초기화하시겠습니까?`)) return
+        setIsSaving(true)
+        const res = await clearMenuPlans(date, type)
+        setIsSaving(false)
+        if (res.success && res.allPlans) {
+            setPlans(res.allPlans as any)
+            alert(`${typeLabel} 식단이 초기화되었습니다.`)
+        } else {
+            alert(res.error || "식단 초기화에 실패했습니다.")
+        }
+    }
+
     const onLibraryItemClick = async (product: Product) => {
         if (!date) return
         const existingPlan = plans.find(p => p.productId === product.id)
@@ -343,6 +360,14 @@ export function MenuCalendar() {
         if (res.success && res.allPlans) setPlans(res.allPlans as any)
         else alert("저장에 실패했습니다.")
         setIsSaving(false)
+
+        // Auto-focus and select text for ultra-fast continuous entry
+        setTimeout(() => {
+            if (searchInputRef.current) {
+                searchInputRef.current.focus();
+                searchInputRef.current.select();
+            }
+        }, 10)
     }
 
     const categoriesList = React.useMemo(() => {
@@ -369,9 +394,14 @@ export function MenuCalendar() {
                         <p className="text-sm text-muted-foreground">사장님의 메뉴 기획실</p>
                     </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleCopy} disabled={isSaving}>
-                    <Copy className="w-4 h-4 mr-2" /> 전일 식단 가져오기
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleClear()} disabled={isSaving || plans.length === 0} className="text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200">
+                        <Trash2 className="w-4 h-4 mr-2" /> 전체 초기화
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleCopy} disabled={isSaving}>
+                        <Copy className="w-4 h-4 mr-2" /> 전일 식단 가져오기
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-12 gap-6">
@@ -409,7 +439,7 @@ export function MenuCalendar() {
                                                 <LunchBoxGuide
                                                     onSlotClick={(lbl, id) => handleSlotClick(lbl, id, 'PRODUCT')}
                                                     slots={(() => {
-                                                        const slots = { rice: { text: "잡곡밥", isEmpty: false }, soup: { text: "", isEmpty: true }, main: { text: "", isEmpty: true }, side1: { text: "", isEmpty: true }, side2: { text: "", isEmpty: true }, side3: { text: "", isEmpty: true } }
+                                                        const slots = { rice: { text: "밥", isEmpty: true }, soup: { text: "국", isEmpty: true }, main: { text: "메인", isEmpty: true }, side1: { text: "반찬1", isEmpty: true }, side2: { text: "반찬2", isEmpty: true }, side3: { text: "반찬3", isEmpty: true } }
                                                         const sides: any[] = []
                                                         plans.filter(p => p.product.type === 'LUNCH_BOX').forEach(p => {
                                                             const cat = p.product.category as string
@@ -423,6 +453,17 @@ export function MenuCalendar() {
                                                         return slots
                                                     })()}
                                                 />
+                                            </div>
+                                            <div className="mt-4 flex justify-end">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    onClick={() => handleClear('LUNCH_BOX')}
+                                                    disabled={isSaving || !plans.some(p => p.product.type === 'LUNCH_BOX')}
+                                                    className="text-[10px] text-slate-400 hover:text-red-500 h-7"
+                                                >
+                                                    <Trash2 className="w-3 h-3 mr-1" /> 도시락 초기화
+                                                </Button>
                                             </div>
                                         </div>
                                     </TabsContent>
@@ -441,26 +482,67 @@ export function MenuCalendar() {
                                                     })()}
                                                 />
                                             </div>
+                                            <div className="mt-4 flex justify-end">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    onClick={() => handleClear('SALAD')}
+                                                    disabled={isSaving || !plans.some(p => p.product.type === 'SALAD' || p.product.category === 'SALAD_MAIN')}
+                                                    className="text-[10px] text-slate-400 hover:text-red-500 h-7"
+                                                >
+                                                    <Trash2 className="w-3 h-3 mr-1" /> 샐러드 초기화
+                                                </Button>
+                                            </div>
                                         </div>
                                     </TabsContent>
                                     <TabsContent value="daily">
-                                        <div className="grid grid-cols-1 gap-2">
-                                            {plans.filter(p => p.product.type === 'DAILY').map(p => (
-                                                <div key={p.id} className="p-4 flex justify-between items-center bg-white border rounded-lg shadow-sm">
-                                                    <span className="font-medium">{p.product.name}</span>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                                        <div className="space-y-4">
+                                            {plans.filter(p => p.product.type === 'DAILY').length > 0 && (
+                                                <div className="flex justify-end">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="xs"
+                                                        onClick={() => handleClear('DAILY')}
+                                                        disabled={isSaving}
+                                                        className="text-[10px] text-slate-400 hover:text-red-500 h-7"
+                                                    >
+                                                        <Trash2 className="w-3 h-3 mr-1" /> 데일리 초기화
+                                                    </Button>
                                                 </div>
-                                            ))}
+                                            )}
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {plans.filter(p => p.product.type === 'DAILY').map(p => (
+                                                    <div key={p.id} className="p-4 flex justify-between items-center bg-white border rounded-lg shadow-sm">
+                                                        <span className="font-medium">{p.product.name}</span>
+                                                        <Button variant="ghost" size="sm" onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </TabsContent>
                                     <TabsContent value="special">
-                                        <div className="grid grid-cols-1 gap-2">
-                                            {plans.filter(p => p.product.type === 'SPECIAL').map(p => (
-                                                <div key={p.id} className="p-4 flex justify-between items-center bg-white border rounded-lg shadow-sm">
-                                                    <span className="font-medium">{p.product.name}</span>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                                        <div className="space-y-4">
+                                            {plans.filter(p => p.product.type === 'SPECIAL').length > 0 && (
+                                                <div className="flex justify-end">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="xs"
+                                                        onClick={() => handleClear('SPECIAL')}
+                                                        disabled={isSaving}
+                                                        className="text-[10px] text-slate-400 hover:text-red-500 h-7"
+                                                    >
+                                                        <Trash2 className="w-3 h-3 mr-1" /> 특별 초기화
+                                                    </Button>
                                                 </div>
-                                            ))}
+                                            )}
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {plans.filter(p => p.product.type === 'SPECIAL').map(p => (
+                                                    <div key={p.id} className="p-4 flex justify-between items-center bg-white border rounded-lg shadow-sm">
+                                                        <span className="font-medium">{p.product.name}</span>
+                                                        <Button variant="ghost" size="sm" onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </TabsContent>
                                 </div>
@@ -480,15 +562,27 @@ export function MenuCalendar() {
                                 <div className="relative flex-1">
                                     <Search className="absolute left-2 top-2 h-4 w-4 text-slate-400" />
                                     <Input
+                                        ref={searchInputRef}
                                         placeholder="메뉴 찾기..."
-                                        className="pl-8 h-8 text-xs bg-white"
+                                        className="pl-8 h-8 text-xs bg-white focus-visible:ring-orange-500"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === 'Tab') {
+                                                // Skip to the first item in the library list
+                                                const firstItem = libraryListRef.current?.querySelector('[tabindex="0"]') as HTMLElement;
+                                                if (firstItem) {
+                                                    e.preventDefault();
+                                                    firstItem.focus();
+                                                }
+                                            }
+                                        }}
                                     />
                                 </div>
                                 <Button
                                     variant="secondary"
                                     size="sm"
+                                    tabIndex={-1}
                                     className="h-8 px-2 bg-slate-200 hover:bg-slate-300 text-slate-700"
                                     onClick={openCreateDialog}
                                 >
@@ -496,7 +590,7 @@ export function MenuCalendar() {
                                 </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto p-0 scrollbar-thin">
+                        <CardContent className="flex-1 overflow-y-auto p-0 scrollbar-thin" ref={libraryListRef}>
                             <div className="p-3 space-y-4">
                                 {Object.entries(categoriesList).map(([key, items]) => {
                                     const filteredItems = items.filter(p => !searchQuery || p.name.includes(searchQuery))
@@ -510,31 +604,42 @@ export function MenuCalendar() {
                                                     return (
                                                         <div
                                                             key={p.id}
+                                                            tabIndex={0}
                                                             onClick={() => onLibraryItemClick(p)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    e.preventDefault();
+                                                                    onLibraryItemClick(p);
+                                                                }
+                                                            }}
                                                             className={cn(
-                                                                "text-left px-3 py-2 text-xs rounded-md border flex justify-between items-center group cursor-pointer transition-colors",
-                                                                isAdded ? "bg-slate-100 border-slate-300 font-medium" : "bg-white hover:bg-orange-50"
+                                                                "text-left px-3 py-2 text-xs rounded-md border flex justify-between items-center group cursor-pointer transition-all outline-none",
+                                                                isAdded
+                                                                    ? "bg-indigo-50 border-indigo-200 font-medium text-indigo-700"
+                                                                    : "bg-white border-slate-200 hover:bg-orange-50 hover:border-orange-200",
+                                                                "focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:border-orange-500"
                                                             )}
                                                         >
                                                             <span className="truncate flex-1">{p.name}</span>
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity ml-2">
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
+                                                                    tabIndex={-1}
                                                                     className="h-6 w-6 p-0 hover:bg-slate-200"
                                                                     onClick={(e) => openEditProductDialog(p, e)}
                                                                 >
                                                                     <Pencil className="w-3 h-3 text-slate-500" />
                                                                 </Button>
                                                                 {isAdded ? (
-                                                                    <Trash2 className="w-3 h-3 text-red-300 hover:text-red-500" />
+                                                                    <Trash2 className="w-3 h-3 text-red-400" />
                                                                 ) : (
-                                                                    <Plus className="w-3 h-3 text-slate-300 hover:text-orange-500" />
+                                                                    <Plus className="w-3 h-3 text-slate-300 group-hover:text-orange-500" />
                                                                 )}
                                                             </div>
                                                             {isAdded && !isSaving && (
-                                                                <div className="flex items-center gap-1 ml-2 group-hover:hidden">
-                                                                    <Badge variant="secondary" className="px-1 h-4 text-[9px] bg-slate-200 text-slate-600">등록됨</Badge>
+                                                                <div className="flex items-center gap-1 ml-2 group-hover:hidden group-focus:hidden">
+                                                                    <Badge variant="secondary" className="px-1.5 h-4 text-[9px] bg-indigo-100 text-indigo-700 border-none">등록됨</Badge>
                                                                 </div>
                                                             )}
                                                         </div>

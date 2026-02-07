@@ -238,3 +238,28 @@ export async function copyMenuPlans(sourceDate: Date, targetDate: Date) {
         return { success: false, error: "식단 복사에 실패했습니다." }
     }
 }
+
+export async function clearMenuPlans(date: Date, type?: ProductType) {
+    try {
+        const { start, end } = getKSTRange(date)
+        const where: any = {
+            planDate: {
+                gte: start,
+                lte: end
+            }
+        }
+
+        if (type) {
+            where.product = { type }
+        }
+
+        await prisma.menuPlan.deleteMany({ where })
+
+        revalidatePath('/admin/menus')
+        const plans = await getMenuPlans(date)
+        return { success: true, allPlans: plans.data }
+    } catch (error) {
+        console.error("Failed to clear menu plans:", error)
+        return { success: false, error: "식단 초기화에 실패했습니다." }
+    }
+}

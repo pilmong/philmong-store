@@ -1,9 +1,10 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
-import { OrderStatus, PaymentStatus, DeliveryType } from "@prisma/client"
+import { OrderStatus, PaymentStatus, DeliveryType, ProductType } from "@prisma/client"
 import { format } from "date-fns"
-import { getKSTRange, getKSTDate } from "@/lib/utils"
+import { getKSTRange, getKSTDate, isOrderDeadlinePassed } from "@/lib/utils"
+import { getSystemPolicy } from "@/app/admin/settings/actions"
 
 interface OrderInput {
     userId?: string
@@ -77,13 +78,18 @@ export async function createOrder(data: OrderInput) {
         const suffix = (count + 1).toString().padStart(4, '0')
         const orderNumber = `${orderDateStr}-${suffix}`
 
-        // 2. Fetch Plans
+        // 2. Fetch Plans & Deadline
         const todayPlans = await prisma.menuPlan.findMany({
             where: {
                 planDate: { gte: start, lte: end }
             },
             include: { product: true }
         })
+
+        const deadlineHourStr = await getSystemPolicy("B2C_DEADLINE_HOUR", "15")
+        const deadlineHour = parseInt(deadlineHourStr)
+        const deadlineBasis = await getSystemPolicy("B2C_DEADLINE_BASIS", "PREVIOUS")
+        const isSameDay = deadlineBasis === "SAME"
 
         // 3. Create Order Transaction
         const result = await prisma.$transaction(async (tx) => {
@@ -95,6 +101,13 @@ export async function createOrder(data: OrderInput) {
 
                 if (!plan) {
                     throw new Error(`오늘의 메뉴 정보를 찾을 수 없습니다. (ID: ${item.productId})`)
+                }
+
+                // Deadline check for Lunchbox/Salad
+                const isLunchOrSalad = plan.product.type === ProductType.LUNCH_BOX || plan.product.type === ProductType.SALAD
+                if (isLunchOrSalad && isOrderDeadlinePassed(plan.planDate, deadlineHour, isSameDay)) {
+                    const basisText = isSameDay ? "당일" : "전날"
+                    throw new Error(`${plan.product.name}은(는) 예약이 마감된 상품입니다. (${basisText} ${deadlineHour}시 마감)`)
                 }
 
                 const price = plan.price

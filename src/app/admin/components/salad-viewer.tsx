@@ -22,20 +22,30 @@ export function SaladViewer({ className, main, ingredients, onSlotClick, readOnl
     const isInteractive = !readOnly && !!onSlotClick
 
     return (
-        <div className={cn("relative w-full max-w-[500px] h-[120px] bg-[#e6f4ea] border-2 border-[#1e8e3e] rounded-xl overflow-hidden shadow-sm mx-auto flex", className)}>
+        <div
+            className={cn("relative w-full max-w-[500px] h-[120px] bg-[#e6f4ea] border-2 border-[#1e8e3e] rounded-xl overflow-hidden shadow-sm mx-auto flex", className)}
+            style={{ containerType: 'inline-size' }}
+        >
+            <style jsx>{`
+                .salad-label { font-size: clamp(8px, 2.5cqw, 10px); }
+                .salad-text-name { font-size: clamp(12px, 5cqw, 20px); }
+                .salad-text-ing { font-size: clamp(10px, 3.5cqw, 14px); }
+            `}</style>
             {/* Left: Main Name */}
             <div
                 onClick={() => isInteractive && onSlotClick && onSlotClick('main', main.id)}
                 className={cn(
-                    "w-[40%] h-full flex items-center justify-center p-4 border-r-2 border-[#1e8e3e] border-dashed relative select-none",
+                    "w-[40%] h-full flex items-center justify-center p-3 border-r-2 border-[#1e8e3e] border-dashed relative select-none",
                     isInteractive && "cursor-pointer hover:bg-[#ceuid0] transition-colors group"
                 )}
             >
-                <div className="absolute top-2 left-2 text-[10px] text-[#1e8e3e] font-bold uppercase tracking-wider">Salad Name</div>
+                {main.isEmpty && (
+                    <div className="absolute top-1 left-2 salad-label text-[#1e8e3e] font-bold uppercase tracking-wider">Salad Name</div>
+                )}
                 {main.isEmpty ? (
                     isInteractive && <Plus className="w-8 h-8 text-[#1e8e3e]/30 group-hover:text-[#1e8e3e]" />
                 ) : (
-                    <span className="text-xl md:text-2xl font-black text-[#134f25] text-center break-keep leading-tight">
+                    <span className="salad-text-name font-black text-[#134f25] text-center break-all leading-tight px-1">
                         {main.text}
                     </span>
                 )}
@@ -45,15 +55,17 @@ export function SaladViewer({ className, main, ingredients, onSlotClick, readOnl
             <div
                 onClick={() => isInteractive && onSlotClick && onSlotClick('ingredients', ingredients.id)}
                 className={cn(
-                    "flex-1 h-full flex items-center justify-center p-6 relative select-none",
+                    "flex-1 h-full flex items-center justify-center p-4 relative select-none",
                     isInteractive && "cursor-pointer hover:bg-[#ceuid0] transition-colors group"
                 )}
             >
-                <div className="absolute top-2 left-2 text-[10px] text-[#1e8e3e] font-bold uppercase tracking-wider">Ingredients</div>
+                {ingredients.isEmpty && (
+                    <div className="absolute top-1 left-2 salad-label text-[#1e8e3e] font-bold uppercase tracking-wider">Ingredients</div>
+                )}
                 {ingredients.isEmpty ? (
                     isInteractive && <Plus className="w-8 h-8 text-[#1e8e3e]/30 group-hover:text-[#1e8e3e]" />
                 ) : (
-                    <span className="text-sm md:text-base text-[#1b5e20] text-center font-medium leading-relaxed break-keep">
+                    <span className="salad-text-ing text-[#1b5e20] text-center font-medium leading-relaxed break-all px-1">
                         {ingredients.text}
                     </span>
                 )}

@@ -1,12 +1,51 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
-import { getKSTRange, getKSTDate } from "@/lib/utils"
+import { getKSTDate, getKSTRange } from "@/lib/utils"
+import { PUBLIC_HOLIDAYS_2026 } from "@/lib/constants"
+import { format } from "date-fns"
 
-export async function getTodayMenu() {
+export async function getTodayMenu(date?: Date) {
     try {
-        const today = getKSTDate()
+        const today = date || getKSTDate()
         const { start, end } = getKSTRange(today)
+        const dateStr = format(today, "yyyy-MM-dd")
+
+        // 0. Check for Holiday (Explicit DB setting)
+        const holiday = await prisma.holiday.findFirst({
+            where: {
+                date: {
+                    gte: start,
+                    lte: end
+                }
+            }
+        })
+
+        if (holiday) {
+            // DB 기록이 있으면 그 설정을 최우선으로 따름 (휴무/영업 오버라이드 가능)
+            if (holiday.isStoreClosed) {
+                return {
+                    success: true,
+                    data: [],
+                    isHoliday: true,
+                    holidayReason: holiday.reason || "정기 휴무"
+                }
+            }
+            // isStoreClosed가 false라면 아래의 기본 주말/공휴일 정책을 무시하고 통과(영업)
+        } else {
+            // DB 기록이 없을 때 기본 정책 (토, 일, 공휴일 자동 휴무)
+            const dayOfWeek = today.getDay() // 0: 일, 6: 토
+            const isPublicHoliday = !!PUBLIC_HOLIDAYS_2026[dateStr]
+
+            if (dayOfWeek === 0 || dayOfWeek === 6 || isPublicHoliday) {
+                return {
+                    success: true,
+                    data: [],
+                    isHoliday: true,
+                    holidayReason: PUBLIC_HOLIDAYS_2026[dateStr] || (dayOfWeek === 0 || dayOfWeek === 6 ? "주말 정기 휴무" : "공휴일 휴무")
+                }
+            }
+        }
 
         // 1. Fetch planned items for today
         const menuPlans = await prisma.menuPlan.findMany({
@@ -60,7 +99,7 @@ export async function getTodayMenu() {
             return b.product.basePrice - a.product.basePrice
         })
 
-        return { success: true, data: combinedData }
+        return { success: true, data: combinedData, isHoliday: false }
     } catch (error) {
         console.error("Failed to fetch today menu:", error)
         return { success: false, error: "오늘의 메뉴를 불러오지 못했습니다." }

@@ -1,5 +1,6 @@
 'use client'
 
+import { isOrderDeadlinePassed } from "@/lib/utils"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { MenuPlan, Product, ProductType, ProductCategory } from "@prisma/client"
@@ -13,6 +14,9 @@ import { cn } from "@/lib/utils"
 interface MenuListProps {
     date: Date
     plans: (MenuPlan & { product: Product })[]
+    deadlineHour: number
+    deadlineBasis: string
+    showLunchSalad?: boolean
 }
 
 const CATEGORIES = [
@@ -22,11 +26,16 @@ const CATEGORIES = [
     { id: 'SIDE', label: '반찬곁들임' },
     { id: 'SOUP_KIMCHI', label: '국물/김치곁들임' },
     { id: 'EXTRAS', label: '장아찌/청/소스 곁들임' },
-    { id: 'LUNCH', label: '런치메뉴' },
+    { id: 'LUNCH', label: '한끼든든 도시락/샐러드' },
 ]
 
-export function MenuList({ date, plans }: MenuListProps) {
+export function MenuList({ date, plans, deadlineHour, deadlineBasis, showLunchSalad = true }: MenuListProps) {
     const [selectedCategory, setSelectedCategory] = useState('BEST')
+
+    const categoryList = useMemo(() => {
+        if (showLunchSalad) return CATEGORIES
+        return CATEGORIES.filter(cat => cat.id !== 'LUNCH')
+    }, [showLunchSalad])
 
     const filteredPlans = useMemo(() => {
         let items = plans
@@ -49,7 +58,7 @@ export function MenuList({ date, plans }: MenuListProps) {
                 case 'EXTRAS':
                     return product.category === ProductCategory.PICKLE || product.category === ProductCategory.SAUCE
                 case 'LUNCH':
-                    return product.type === ProductType.LUNCH_BOX || product.type === ProductType.SALAD || (product.category as string)?.startsWith('LUNCH_')
+                    return product.type === ProductType.LUNCH_BOX || product.type === ProductType.SALAD
                 default:
                     return true
             }
@@ -77,7 +86,7 @@ export function MenuList({ date, plans }: MenuListProps) {
 
                 {/* Category Tabs */}
                 <div className="flex overflow-x-auto pb-4 md:pb-0 gap-2 scrollbar-thin">
-                    {CATEGORIES.map((cat) => (
+                    {categoryList.map((cat) => (
                         <button
                             key={cat.id}
                             onClick={() => setSelectedCategory(cat.id)}
@@ -97,7 +106,13 @@ export function MenuList({ date, plans }: MenuListProps) {
             {/* List View */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredPlans.map((plan) => (
-                    <MenuListItem key={plan.id} product={plan.product} />
+                    <MenuListItem
+                        key={plan.id}
+                        product={plan.product}
+                        date={date}
+                        deadlineHour={deadlineHour}
+                        deadlineBasis={deadlineBasis}
+                    />
                 ))}
             </div>
 
@@ -110,9 +125,12 @@ export function MenuList({ date, plans }: MenuListProps) {
     )
 }
 
-function MenuListItem({ product }: { product: Product }) {
+function MenuListItem({ product, date, deadlineHour, deadlineBasis }: { product: Product, date: Date, deadlineHour: number, deadlineBasis: string }) {
     const addItem = useCartStore(state => state.addItem)
-    const isSoldOut = product.status === "NOT_SELLING"
+    const isLunchOrSalad = product.type === ProductType.LUNCH_BOX || product.type === ProductType.SALAD
+    const isSameDay = deadlineBasis === "SAME"
+    const isDeadlinePassed = isLunchOrSalad && isOrderDeadlinePassed(date, deadlineHour, isSameDay)
+    const isSoldOut = product.status === "NOT_SELLING" || isDeadlinePassed
 
     const handleAddToCart = () => {
         addItem(product)
@@ -134,7 +152,7 @@ function MenuListItem({ product }: { product: Product }) {
                 {isSoldOut && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <span className="text-white text-xs font-bold border border-white px-1 transform -rotate-12">
-                            품절
+                            {isDeadlinePassed ? "마감됨" : "품절"}
                         </span>
                     </div>
                 )}
@@ -162,7 +180,7 @@ function MenuListItem({ product }: { product: Product }) {
 
                 <h3 className="font-bold text-base truncate pr-2">{product.name}</h3>
                 <p className="text-sm text-muted-foreground truncate">
-                    {product.description || "설명이 없습니다."}
+                    {isDeadlinePassed ? `${isSameDay ? "당일" : "전날"} ${deadlineHour}시 예약 마감상품입니다.` : (product.description || "설명이 없습니다.")}
                 </p>
 
                 <div className="flex items-center justify-between mt-2">

@@ -46,6 +46,13 @@ const dashboardItems = [
         href: "/admin/clients",
         color: "text-slate-500",
     },
+    {
+        title: "휴무일 관리",
+        description: "연간 공휴일 및 임시 휴무 설정",
+        icon: Calendar,
+        href: "/admin/holidays",
+        color: "text-rose-500",
+    },
 ]
 
 export default function AdminDashboardPage() {
