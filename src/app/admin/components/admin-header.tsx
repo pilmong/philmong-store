@@ -21,13 +21,19 @@ export function AdminHeader() {
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-14 items-center">
                 <div className="mr-4 hidden md:flex">
-                    <Link href="/admin/products" className="mr-6 flex items-center space-x-2">
+                    <Link href="/admin" className="mr-6 flex items-center space-x-2">
+                        <LayoutDashboard className="h-5 w-5 text-emerald-500" />
                         <span className="hidden font-bold sm:inline-block">
                             Philmong Admin
                         </span>
                     </Link>
                     <NavigationMenu>
                         <NavigationMenuList>
+                            <NavigationMenuItem>
+                                <Link href="/admin" className={navigationMenuTriggerStyle()}>
+                                    📊 대시보드
+                                </Link>
+                            </NavigationMenuItem>
 
                             {/* B2B Group */}
                             <NavigationMenuItem>

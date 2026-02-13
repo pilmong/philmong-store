@@ -110,12 +110,9 @@ export async function updateClientOrder(clientId: string, date: Date, lunchQty: 
     try {
         const { start } = getKSTRange(date)
 
-        // Find existing order for logging
-        const existingOrder = await prisma.clientOrder.findUnique({
-            where: { clientId_date: { clientId, date: start } }
-        })
+        // Find existing order for logging (Optional: if we want to log, but we are removing logging for now to sync with daily operations)
 
-        const order = await prisma.clientOrder.upsert({
+        await prisma.clientOrder.upsert({
             where: {
                 clientId_date: {
                     clientId: clientId,
@@ -124,34 +121,14 @@ export async function updateClientOrder(clientId: string, date: Date, lunchQty: 
             },
             update: {
                 lunchBoxQuantity: lunchQty,
-                saladQuantity: saladQty,
-                note: note
+                saladQuantity: saladQty
             },
             create: {
                 clientId: clientId,
                 date: start,
                 lunchBoxQuantity: lunchQty,
                 saladQuantity: saladQty,
-                note: note,
                 status: "PENDING"
-            }
-        })
-
-        // Get Client Info for Logging
-        const client = await prisma.client.findUnique({ where: { id: clientId } })
-
-        // Create Log
-        await prisma.clientOrderLog.create({
-            data: {
-                orderId: order.id,
-                actorType: "CLIENT",
-                actorName: client?.name || "B2B Client",
-                actorId: clientId,
-                oldLunchQty: existingOrder?.lunchBoxQuantity || 0,
-                newLunchQty: lunchQty,
-                oldSaladQty: existingOrder?.saladQuantity || 0,
-                newSaladQty: saladQty,
-                action: existingOrder ? "UPDATE" : "CREATE"
             }
         })
 

@@ -18,8 +18,8 @@ export default function B2BDashboardPage() {
     const [client, setClient] = useState<{ id: string, name: string } | null>(null)
     const [currentDate, setCurrentDate] = useState(new Date())
     const [orders, setOrders] = useState<any[]>([])
-    // inputValues: dateStr -> { lunch, salad, note }
-    const [inputValues, setInputValues] = useState<{ [key: string]: { lunch: string, salad: string, note: string } }>({})
+    // inputValues: dateStr -> { lunch, salad }
+    const [inputValues, setInputValues] = useState<{ [key: string]: { lunch: string, salad: string } }>({})
     const [generalNote, setGeneralNote] = useState("")
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -60,8 +60,7 @@ export default function B2BDashboardPage() {
 
                     initialInputs[dateKey] = {
                         lunch: existing ? existing.lunchBoxQuantity.toString() : "0",
-                        salad: existing ? existing.saladQuantity.toString() : "0",
-                        note: existing ? existing.note || "" : ""
+                        salad: existing ? existing.saladQuantity.toString() : "0"
                     }
                 }
                 setInputValues(initialInputs)
@@ -72,8 +71,8 @@ export default function B2BDashboardPage() {
         fetchOrders()
     }, [client, currentDate])
 
-    const handleInputChange = (dateStr: string, type: 'lunch' | 'salad' | 'note', value: string) => {
-        if (type !== 'note' && !/^\d*$/.test(value)) return
+    const handleInputChange = (dateStr: string, type: 'lunch' | 'salad', value: string) => {
+        if (!/^\d*$/.test(value)) return
 
         setInputValues(prev => ({
             ...prev,
@@ -96,9 +95,8 @@ export default function B2BDashboardPage() {
             const promises = Object.entries(inputValues).map(([dateStr, values]) => {
                 const lunchQty = parseInt(values.lunch) || 0
                 const saladQty = parseInt(values.salad) || 0
-                const note = values.note
 
-                return updateClientOrder(client.id, new Date(dateStr), lunchQty, saladQty, note)
+                return updateClientOrder(client.id, new Date(dateStr), lunchQty, saladQty)
             })
 
             const results = await Promise.all(promises)
@@ -215,18 +213,6 @@ export default function B2BDashboardPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* Daily Note */}
-                                        <div className="w-full md:w-1/2">
-                                            <Label className="text-xs text-muted-foreground mb-1 block">일자별 메모</Label>
-                                            <Input
-                                                placeholder="오늘의 특이사항 (선택)"
-                                                value={dayValues.note}
-                                                onChange={(e) => handleInputChange(dateStr, 'note', e.target.value)}
-                                                className="text-sm bg-slate-50/50"
-                                                disabled={isDeadlinePassed}
-                                            />
                                         </div>
                                     </div>
                                 </div>

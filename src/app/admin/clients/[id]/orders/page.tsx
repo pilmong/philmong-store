@@ -25,7 +25,7 @@ export default async function ClientOrdersPage({ params }: PageProps) {
         <div className="container mx-auto py-10">
             <h1 className="text-2xl font-bold mb-2">{client.name} 주간 주문 관리</h1>
             <p className="text-muted-foreground mb-8">
-                {client.manager} 담당자 / {client.address}
+                {client.managerEmail || "담당자 정보 없음"} / {client.address || "주소 미입력"}
             </p>
 
             {client.note && (

@@ -63,7 +63,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                             <TableRow key={client.id}>
                                 <TableCell className="font-medium">{client.name}</TableCell>
                                 <TableCell>{client.code || '-'}</TableCell>
-                                <TableCell>{client.manager || '-'}</TableCell>
+                                <TableCell>{client.managerEmail || '-'}</TableCell>
                                 <TableCell>{client.contact || '-'}</TableCell>
                                 <TableCell className="max-w-[200px] truncate" title={client.address || ""}>{client.address || '-'}</TableCell>
                                 <TableCell className="text-right flex justify-end gap-2">

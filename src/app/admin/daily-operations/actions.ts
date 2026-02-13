@@ -16,7 +16,7 @@ export async function getDailyOperations(date: Date) {
 
         const clients = await prisma.client.findMany({
             include: {
-                orders: {
+                clientOrders: {
                     where: {
                         date: {
                             gte: start,
@@ -29,13 +29,13 @@ export async function getDailyOperations(date: Date) {
         })
 
         const mappedClients = clients.map(client => {
-            const order = client.orders[0] // Should be only one per date
+            const order = client.clientOrders[0] // Should be only one per date
             const lunchQty = order?.lunchBoxQuantity || 0
             const saladQty = order?.saladQuantity || 0
 
-            // Calculate Amounts
-            const lunchPrice = client.lunchUnitPrice || 0
-            const saladPrice = client.saladUnitPrice || 0
+            // Calculate Amounts - TODO: Implement price logic with CustomPrice
+            const lunchPrice = 0
+            const saladPrice = 0
             const totalAmount = (lunchQty * lunchPrice) + (saladQty * saladPrice)
 
             return {
@@ -46,11 +46,11 @@ export async function getDailyOperations(date: Date) {
                 lunchPrice,
                 saladPrice,
                 totalAmount,
-                paymentMethod: client.paymentMethod,
-                paymentTiming: client.paymentTiming,
-                paymentDay: (client as any).paymentDay || 0,
+                paymentMethod: 'CARD', // Default
+                paymentTiming: 'IMMEDIATE', // Default
+                paymentDay: 0,
                 generalNote: client.note || "",
-                dailyNote: order?.note || ""
+                dailyNote: ""
             }
         })
 
@@ -187,14 +187,8 @@ export async function getDailyOperations(date: Date) {
 export async function updateClientOrderAction(clientId: string, date: Date, lunchQty: number, saladQty: number, note?: string) {
     try {
         const { start } = getKSTRange(date)
-        const session = await getSession()
 
-        // Find existing order for logging
-        const existingOrder = await prisma.clientOrder.findUnique({
-            where: { clientId_date: { clientId, date: start } }
-        })
-
-        const order = await prisma.clientOrder.upsert({
+        await prisma.clientOrder.upsert({
             where: {
                 clientId_date: {
                     clientId: clientId,
@@ -204,30 +198,13 @@ export async function updateClientOrderAction(clientId: string, date: Date, lunc
             update: {
                 lunchBoxQuantity: lunchQty,
                 saladQuantity: saladQty,
-                note: note
             },
             create: {
                 clientId: clientId,
                 date: start,
                 lunchBoxQuantity: lunchQty,
                 saladQuantity: saladQty,
-                note: note,
                 status: "PENDING"
-            }
-        })
-
-        // Create Log
-        await prisma.clientOrderLog.create({
-            data: {
-                orderId: order.id,
-                actorType: "ADMIN",
-                actorName: (session as any)?.name || "Administrator",
-                actorId: (session as any)?.id,
-                oldLunchQty: existingOrder?.lunchBoxQuantity || 0,
-                newLunchQty: lunchQty,
-                oldSaladQty: existingOrder?.saladQuantity || 0,
-                newSaladQty: saladQty,
-                action: existingOrder ? "UPDATE" : "CREATE"
             }
         })
 
@@ -239,31 +216,5 @@ export async function updateClientOrderAction(clientId: string, date: Date, lunc
 }
 
 export async function getOrderLogs(clientId: string, date: Date) {
-    try {
-        const { start } = getKSTRange(date)
-
-        const order = await prisma.clientOrder.findUnique({
-            where: {
-                clientId_date: {
-                    clientId,
-                    date: start
-                }
-            },
-            include: {
-                logs: {
-                    orderBy: {
-                        date: 'desc'
-                    }
-                }
-            }
-        })
-
-        return {
-            success: true,
-            logs: (order as any)?.logs || []
-        }
-    } catch (error) {
-        console.error("getOrderLogs Error:", error)
-        return { success: false, error: "기록을 불러오지 못했습니다.", logs: [] }
-    }
+    return { success: true, logs: [], error: undefined as string | undefined }
 }

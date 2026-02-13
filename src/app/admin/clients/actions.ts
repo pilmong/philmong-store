@@ -3,18 +3,13 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
-import { B2BPaymentMethod, B2BPaymentTiming } from "@prisma/client"
-
 export type ClientInput = {
     name: string
     code?: string
-    manager?: string
+    managerEmail?: string
     contact?: string
     address?: string
     note?: string
-    paymentMethod?: B2BPaymentMethod
-    paymentTiming?: B2BPaymentTiming
-    paymentDay?: number | null
 }
 
 export async function getClients() {
@@ -130,14 +125,12 @@ export async function upsertClientOrder(clientId: string, data: OrderInput) {
             update: {
                 lunchBoxQuantity: data.lunchBoxQuantity,
                 saladQuantity: data.saladQuantity,
-                note: data.note
             },
             create: {
                 clientId,
                 date: data.date,
                 lunchBoxQuantity: data.lunchBoxQuantity,
                 saladQuantity: data.saladQuantity,
-                note: data.note,
                 status: 'PENDING'
             }
         })

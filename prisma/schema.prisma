@@ -8,67 +8,57 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ---------------------------------------------------------
-// 1. PROJECT PURCHASE (Legacy & Shared)
-// ---------------------------------------------------------
+// --- Shared Internal Models (from Philmong App) ---
 
 enum PaymentMethod {
-  TRANSFER    // 계좌이체
-  CASH        // 현금
-  CREDIT_CARD // 신용카드
-  CHECK_CARD  // 체크카드
+  TRANSFER
+  CASH
+  CREDIT_CARD
+  CHECK_CARD
 }
 
 enum PaymentStatus {
-  UNPAID    // 미결제
-  PAID      // 결제완료
-  REFUNDED  // 환불
-  
-  // Purchase specific
-  ORDERED   // 발주완료
-  RECEIVED  // 입고완료
-  COMPLETED // 구매확정
-  CANCELLED // 취소
-  PENDING   // Legacy
+  ORDERED
+  RECEIVED
+  COMPLETED
+  CANCELLED
+  UNPAID
+  PAID
+  REFUNDED
 }
 
 enum UsageType {
-  BUSINESS // 업무용
-  PERSONAL // 개인용
+  BUSINESS
+  PERSONAL
 }
 
 model Purchase {
   id            String        @id @default(uuid())
-  vendorName    String        // 거래처명
-  date          DateTime      // 날짜
-  paymentMethod PaymentMethod // 결제수단
-  status        PaymentStatus // 결제구분
-  
+  vendorName    String
+  date          DateTime
+  paymentMethod PaymentMethod @default(CREDIT_CARD)
+  status        PaymentStatus @default(ORDERED)
+  totalAmount   Int           @default(0)
   items         PurchaseItem[]
-  
-  totalAmount   Int           @default(0) // 총계
-  
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
 
 model PurchaseItem {
-  id          String    @id @default(uuid())
-  purchaseId  String
-  purchase    Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  
-  name        String    // 품목명
-  quantity    Int       // 수량
-  unitPrice   Int       // 단가
-  amount      Int       // 소계
-  usage       UsageType // 용도구분
-  note        String?   // 비고
-  isChecked   Boolean   @default(false)
+  id            String    @id @default(uuid())
+  purchaseId    String
+  purchase      Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  name          String
+  quantity      Int
+  unitPrice     Int
+  amount        Int
+  usage         UsageType
+  note          String?
+  isChecked     Boolean   @default(false)
   discountValue Int       @default(0)
   discountType  String    @default("UNIT")
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Vendor {
@@ -77,130 +67,99 @@ model Vendor {
   contact   String?
   website   String?
   note      String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Account {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   username  String   @unique
   password  String
   name      String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// ---------------------------------------------------------
-// 2. PHILMONG STORE (New Features & Merged Product)
-// ---------------------------------------------------------
-
-// --- Master Data (Merged) ---
+// --- Sales & Product Models (Shared & Extended) ---
 
 enum WorkDivision {
-  IMMEDIATE_SUB_PORTIONING // 즉시 소분
-  COOKING                 // 조리 상품
-  PROCESSING               // 가공 상품
+  IMMEDIATE_SUB_PORTIONING
+  COOKING
+  PROCESSING
 }
 
 enum ProductStatus {
-  SELLING        // 판매 중
-  NOT_SELLING    // 미 판매
-  PENDING        // 보류 중
+  SELLING
+  NOT_SELLING
+  PENDING
+}
+
+enum ProductType {
+  REGULAR
+  DAILY
+  SPECIAL
+  LUNCH_BOX
+  SALAD
+  ZONE
+  DISCOUNT
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String?  // 기본 설명 (레시피 팁 등)
-  basePrice   Int      @default(0) // (Legacy: price) 기본 판매가
-  
-  type        ProductType @default(REGULAR)
-  category    ProductCategory? 
-
-  // Legacy Fields (restored)
+  id              String        @id @default(cuid())
+  name            String
+  basePrice       Int           @default(0)
+  type            ProductType
+  category        ProductCategory?
   workDivision    WorkDivision  @default(IMMEDIATE_SUB_PORTIONING)
   status          ProductStatus @default(SELLING)
-  standardQuantity Int?          // 진열상품 기준 수량
-  sellingDate     DateTime?     // 판매 날짜 (Legacy Daily logic)
-  plannedQuantity Int?          // 생산 수량
+  standardQuantity Int?
+  sellingDate     DateTime?
+  sellingEndDate  DateTime?
+  description     String?
+  plannedQuantity Int?
   
-  // Relations
-  plans           MenuPlan[]
   prices          ClientProductPrice[]
   lunchBoxConfig  LunchBoxConfig?
-  orderRequests   OrderRequestItem[] // (Legacy)
+  orderRequests   OrderRequestItem[]
+  saleItems       SaleItem[]
+  menuPlans       MenuPlan[]
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
   @@index([type])
   @@index([sellingDate])
 }
 
-enum ProductType {
-  REGULAR   // 정규 메뉴 (상시/매일)
-  DAILY     // 데일리 메뉴 (기획 필요)
-  SPECIAL   // 특별 메뉴 (기간 예약)
-  LUNCH_BOX // B2B 도시락
-  SALAD     // B2B 샐러드
-}
-
 enum ProductCategory {
-  TODAY_MENU // 오늘의 메뉴
-  MAIN_DISH  // 요리 곁들임
-  SOUP       // 국물 곁들임
-  SIDE_DISH  // 반찬 곁들임
-  KIMCHI     // 김치 곁들임
-  PICKLE     // 장아찌 곁들임
-  SAUCE      // 청/소스 곁들임
-
-  // B2B 전용 카테고리 (독립 운영)
-  LUNCH_RICE // 도시락 밥
-  LUNCH_SOUP // 도시락 국
-  LUNCH_MAIN // 도시락 메인
-  LUNCH_SIDE // 도시락 반찬
-  SALAD_MAIN // 샐러드 메인
+  TODAY_MENU
+  MAIN_DISH
+  SOUP
+  SIDE_DISH
+  KIMCHI
+  PICKLE
+  SAUCE
+  LUNCH_RICE
+  LUNCH_SOUP
+  LUNCH_MAIN
+  LUNCH_SIDE
+  SALAD_MAIN
 }
-
-enum B2BPaymentMethod {
-  CARD
-  CASH
-}
-
-enum B2BPaymentTiming {
-  IMMEDIATE // 매일 납품 즉시 결제
-  DEFERRED  // 지정 날짜 합산 결제
-}
-
-// --- Legacy B2B Logic (Restored) ---
 
 model Client {
   id              String        @id @default(cuid())
   name            String
-  code            String?       @unique // (New: Login Code)
-  manager         String?       // (Legacy: managerEmail? No, merging)
-  managerEmail    String?       // (Legacy)
+  code            String?       @unique
+  managerEmail    String?
   contact         String?
-  address         String?       // (New)
-  
-  category        String?       // (Legacy)
-  isVatInclusive  Boolean       @default(true) // (Legacy)
+  category        String?
+  address         String?
+  isVatInclusive  Boolean       @default(true)
   note            String?
-
-  // B2B Payment & Price Info
-  paymentMethod   B2BPaymentMethod @default(CARD)
-  paymentTiming   B2BPaymentTiming @default(IMMEDIATE)
-  paymentDay      Int?          // 결제일 (예: 25일)
-  lunchUnitPrice  Int           @default(7000) // Default price, adjustable per client
-  saladUnitPrice  Int           @default(7000)
-
-
-  // Relations
+  
   customPrices    ClientProductPrice[]
-  orderRequests   OrderRequest[] // (Legacy Orders)
-  orders          ClientOrder[]  // (New Orders)
+  orderRequests   OrderRequest[]
+  clientOrders    ClientOrder[]
   
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -211,7 +170,6 @@ model ClientProductPrice {
   clientId        String
   productId       String
   customPrice     Int
-  
   client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -222,9 +180,7 @@ model LunchBoxConfig {
   id              String    @id @default(cuid())
   productId       String    @unique
   product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
   layoutType      String    @default("LUNCH_BOX")
-  
   slotA           String?   
   slotB           String?
   slotC           String?
@@ -258,10 +214,8 @@ model OrderRequest {
   id              String    @id @default(cuid())
   clientId        String
   client          Client    @relation(fields: [clientId], references: [id])
-  targetDate      DateTime  
-  
+  targetDate      DateTime
   items           OrderRequestItem[]
-  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -273,174 +227,172 @@ model OrderRequestItem {
   itemName        String?   
   itemCategory    String?   
   quantity        Int
-  
   order           OrderRequest @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product         Product?     @relation(fields: [productId], references: [id])
 }
 
-// --- New B2B Logic (Simple Quantity) ---
-model ClientOrder {
-  id        String   @id @default(uuid())
-  clientId  String
-  client    Client   @relation(fields: [clientId], references: [id])
-  
-  date      DateTime 
-  
-  lunchBoxQuantity Int @default(0)
-  saladQuantity    Int @default(0)
-  
-  note      String?
-  status    OrderStatus @default(PENDING)
+// --- Philmong Store Specific Models ---
 
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  password  String
+  adminNote String?
+  orders    Order[]
+  coupons   UserCoupon[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  logs      ClientOrderLog[]
-
-  @@unique([clientId, date])
 }
 
-model ClientOrderLog {
-  id        String   @id @default(uuid())
-  orderId   String
-  order     ClientOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  date      DateTime @default(now()) // 변경 시각
-  actorType String   // "ADMIN" | "CLIENT"
-  actorName String   // 변경자 이름
-  actorId   String?  // 변경자 ID (Account ID 또는 Client ID)
-
-  oldLunchQty Int
-  newLunchQty Int
-  oldSaladQty Int
-  newSaladQty Int
-  
-  action    String   // "CREATE" | "UPDATE"
-  
-  @@index([orderId])
+model Order {
+  id            String   @id @default(uuid())
+  orderNumber   String   @unique 
+  customerName  String
+  customerPhone String
+  password      String?  
+  totalAmount   Int
+  pickupDate    String   
+  pickupTime    String?  
+  deliveryType  DeliveryType
+  address       String?
+  detailAddress String?
+  deliveryZoneId String?
+  deliveryFee   Int      @default(0)
+  requestNote   String?
+  status        OrderStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentDeadline DateTime?
+  paymentNotified Boolean   @default(false)
+  items         OrderItem[]
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  couponId      String?
+  coupon        Coupon?  @relation(fields: [couponId], references: [id])
+  discountAmount Int     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
-// --- Delivery & Coupons ---
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productName String
+  price       Int
+  quantity    Int
+  amount      Int      
+  menuPlanId  String?
+  menuPlan    MenuPlan? @relation(fields: [menuPlanId], references: [id])
+}
+
+model MenuPlan {
+  id          String   @id @default(uuid())
+  planDate    DateTime 
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  price       Int      
+  quantityLimit Int?   
+  soldQuantity  Int    @default(0)
+  descriptionOverride String?
+  status      PlanStatus @default(PLANNED)
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([planDate])
+}
 
 model DeliveryZone {
   id          String   @id @default(uuid())
-  name        String   // ex: "A zone", "B zone"
-  price       Int      // ex: 4400, 5200
-  
+  name        String
+  price       Int
   areas       String[] 
-  
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Coupon {
-  id          String   @id @default(uuid())
-  name        String   // ex: "예약상시쿠폰35"
-  code        String?  @unique
-  
-  discountAmount Int   
-  minOrderAmount Int   
-  
-  validFrom   DateTime?
-  validUntil  DateTime?
-  
-  isActive    Boolean  @default(true)
-  isAuto      Boolean  @default(false) // 자동 적용 여부 (금액 조건 충족 시)
-  
-  usedOrders  Order[]
-  
-  userCoupons UserCoupon[] // Relation to UserCoupon
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  code           String?  @unique
+  discountAmount Int
+  minOrderAmount Int
+  isActive       Boolean  @default(true)
+  isAuto         Boolean  @default(false)
+  validFrom      DateTime? @default(now())
+  validUntil     DateTime?
+  usedOrders     Order[]
+  userCoupons    UserCoupon[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
-// --- Planning ---
-
-model MenuPlan {
-  id          String   @id @default(uuid())
-  
-  planDate    DateTime 
-  
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  
-  price       Int      
-  quantityLimit Int?   
-  soldQuantity  Int    @default(0)
-  
-  descriptionOverride String? 
-  status      PlanStatus @default(PLANNED)
-
-  orderItems  OrderItem[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([planDate])
+model UserCoupon {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@unique([userId, couponId])
 }
 
-enum PlanStatus {
-  PLANNED   
-  OPEN      
-  CLOSED    
-  SOLD_OUT  
+model ClientOrder {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  date      DateTime 
+  lunchBoxQuantity Int @default(0)
+  saladQuantity    Int @default(0)
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([clientId, date])
 }
 
-// --- Sales & Orders (Customer App) ---
+// --- Legacy & Support Models ---
 
-model Order {
-  id            String   @id @default(uuid())
-  orderNumber   String   @unique 
-  
-  customerName  String
-  customerPhone String
-  password      String?  
-
-  totalAmount   Int
-  pickupDate    String   
-  pickupTime    String?  
-  deliveryType  DeliveryType
-  
-  address       String?
-  detailAddress String?
-  deliveryZoneId String?
-  deliveryFee   Int      @default(0)
-  
-  requestNote   String?
-
-  couponId      String?
-  coupon        Coupon?  @relation(fields: [couponId], references: [id])
-  discountAmount Int     @default(0)
-
-  status        OrderStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
-  
-  items         OrderItem[]
-
-  createdAt     DateTime @default(now())
-  paymentDeadline DateTime? // 입금 기한
-  paymentNotified Boolean  @default(false) // 입금 알림 여부 (고객 -> 관리자)
-  
-  updatedAt     DateTime @updatedAt
-  
-  userId        String?  // 회원 주문인 경우 연결
-  user          User?    @relation(fields: [userId], references: [id])
+model Sale {
+  id              String      @id @default(cuid())
+  source          String      @default("NAVER")
+  customerName    String?
+  customerPhone   String?
+  pickupType      String?
+  address         String?
+  deliveryFee     Int         @default(0)
+  discountValue   Int         @default(0)
+  totalAmount     Int
+  status          OrderStatus @default(PENDING)
+  utilizationDate DateTime?
+  items           SaleItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
-model OrderItem {
-  id          String    @id @default(uuid())
-  orderId     String
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  menuPlanId  String?
-  menuPlan    MenuPlan? @relation(fields: [menuPlanId], references: [id])
-  
-  productName String
-  price       Int
-  quantity    Int
-  amount      Int      
+model SaleItem {
+  id              String      @id @default(cuid())
+  saleId          String
+  productId       String?
+  customName      String?
+  quantity        Int
+  price           Int
+  sale            Sale        @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product         Product?    @relation(fields: [productId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+  STANDBY
+  ACCEPTED
+  PACKING
+  DELIVERY_READY
 }
 
 enum DeliveryType {
@@ -448,74 +400,26 @@ enum DeliveryType {
   DELIVERY
 }
 
-enum OrderStatus {
-  PENDING   
-  CONFIRMED 
-  PREPARING 
-  READY     
-  COMPLETED 
-  CANCELLED 
+enum PlanStatus {
+  PLANNED
+  OPEN
+  CLOSED
+  SOLD_OUT
 }
-
-// --- Membership ---
-
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String   @unique // Login ID
-  password  String   // Hashed
-  
-  adminNote String?  // 관리자 메모 (특이사항 등)
-
-  coupons   UserCoupon[]
-  orders    Order[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model UserCoupon {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  couponId  String
-  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  
-  isUsed    Boolean  @default(false)
-  usedAt    DateTime?
-  
-  createdAt DateTime @default(now())
-  
-  @@unique([userId, couponId]) // Prevent duplicates if needed, or allow multiple same coupons? Let's unique for now for welcome coupon etc.
-}
-
-
-// --- System Settings ---
-
-
+// 스토어 운영 정책 설정
 model SystemPolicy {
-  key       String   @id // ex: "B2B_DEADLINE_HOUR", "B2C_DEADLINE_HOUR"
+  key       String   @id
   value     String
   updatedAt DateTime @updatedAt
 }
-
-// --- Holiday Management ---
-
-enum HolidayType {
-  PUBLIC    // 법정공휴일
-  REGULAR   // 정기휴무
-  TEMPORARY // 임시휴무
-}
-
+// 휴무일 관리
 model Holiday {
-  id            String      @id @default(uuid())
-  date          DateTime    @unique // 휴무 날짜 (시간은 00:00:00 처리)
-  type          HolidayType @default(TEMPORARY)
-  category      String      @default("HOLIDAY") // ex: HOLIDAY, EDUCATION, ERRAND, PERSONAL
-  reason        String?     // 사유 (ex: 설날, 개인사정, 직원교육)
-  isStoreClosed Boolean     @default(true)      // 실제 영업 중단 여부
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id            String   @id @default(uuid())
+  date          DateTime @unique
+  reason        String?
+  category      String   @default("HOLIDAY")
+  type          String   @default("TEMPORARY")
+  isStoreClosed Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
